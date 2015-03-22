@@ -1,7 +1,6 @@
 package container
 
 import (
-	"log"
 	"github.com/martin-helmich/distcrond/domain"
 )
 
@@ -17,7 +16,6 @@ func NewJobContainer(initialCapacity int) *JobContainer {
 
 func (c *JobContainer) AddJob(job domain.Job) {
 	c.jobs = append(c.jobs, job)
-	log.Printf("Added job %s\n", job.Name)
 }
 
 func (c *JobContainer) Count() int {

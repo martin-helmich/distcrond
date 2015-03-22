@@ -1,7 +1,6 @@
 package reader
 
 import (
-	"log"
 	"os"
 	"errors"
 	"fmt"
@@ -10,6 +9,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"github.com/martin-helmich/distcrond/domain"
+	"github.com/martin-helmich/distcrond/logging"
 )
 
 type JobReader struct {
@@ -30,7 +30,7 @@ func NewJobReader(validationConfig domain.JobValidationConfig, receiver JobRecei
 }
 
 func (r JobReader) ReadFromDirectory(directory string) error {
-	log.Println("Reading configuration")
+	logging.Info("Reading job configuration")
 
 	var walk filepath.WalkFunc = func(path string, file os.FileInfo, err error) error {
 		if file.IsDir() {
@@ -38,7 +38,7 @@ func (r JobReader) ReadFromDirectory(directory string) error {
 		}
 
 		if file.Name()[0] == '.' {
-			log.Println("Skipping", path)
+			logging.Debug("Skipping", path)
 			return nil
 		}
 
@@ -64,7 +64,7 @@ func (r JobReader) ReadFromDirectory(directory string) error {
 			return wrapError(mappingErr)
 		}
 
-		log.Printf("Read job from %s: %s\n", file.Name(), job)
+		logging.Debug("Read job from %s: %s\n", file.Name(), job)
 
 		if validErr := job.IsValid(r.validationConfig); validErr != nil {
 			return wrapError(validErr)

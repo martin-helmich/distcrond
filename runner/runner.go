@@ -1,7 +1,6 @@
 package runner
 
 import (
-	"log"
 	"github.com/martin-helmich/distcrond/container"
 	"github.com/martin-helmich/distcrond/domain"
 	"errors"
@@ -10,6 +9,7 @@ import (
 
 type JobRunner struct {
 	nodes *container.NodeContainer
+
 }
 
 func NewJobRunner(nodes *container.NodeContainer) *JobRunner {
@@ -17,7 +17,8 @@ func NewJobRunner(nodes *container.NodeContainer) *JobRunner {
 }
 
 func (r *JobRunner) Run(job *domain.Job) error {
-	nodes := r.nodes.NodesForJob(job)
+	logger := job.Logger
+	nodes  := r.nodes.NodesForJob(job)
 
 	if len(nodes) == 0 {
 		return errors.New(fmt.Sprintf("No nodes available for job %s", job.Name))
@@ -25,20 +26,21 @@ func (r *JobRunner) Run(job *domain.Job) error {
 
 	done := make(chan bool, len(nodes))
 
-	log.Printf("%s: Executing on %d nodes", job.Name, len(nodes))
+	logger.Debug("Executing on %d nodes", len(nodes))
 	for _, node := range nodes {
 		go func(node *domain.Node) {
-			log.Printf("%s: Executing on node %s\n", job.Name, node.Name)
+			logger.Debug("Executing on node %s\n", node.Name)
 
-			report := RunReport{}
+			report := domain.RunReport{}
+			report.Initialize()
 
-			strat, _ := GetStrategyForNode(node)
+			strat, _ := GetStrategyForNode(node, job.Logger)
 			if err := strat.ExecuteCommand(job.Command, &report); err != nil {
-				log.Println(err)
+				logger.Error("%s", err)
 			}
 
-			log.Printf("%s: Done on %s\n", job.Name, node.Name)
-			log.Printf("%s: Report: %s\n", job.Name, report)
+			logger.Debug("Done on %s\n", node.Name)
+			logger.Info("Report: %s\n", report.Summary())
 
 			done <- true
 		}(node)
@@ -48,7 +50,7 @@ func (r *JobRunner) Run(job *domain.Job) error {
 		<- done
 	}
 
-	log.Printf("%s: Done on all nodes", job.Name)
+	logger.Info("%s: Done on all nodes", job.Name)
 
 	return nil
 }

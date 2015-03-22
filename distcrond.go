@@ -1,6 +1,6 @@
 package main
 
-import "log"
+//import "log"
 import "os"
 import (
 	"os/signal"
@@ -9,6 +9,8 @@ import (
 	"github.com/martin-helmich/distcrond/container"
 	"github.com/martin-helmich/distcrond/scheduler"
 	"github.com/martin-helmich/distcrond/runner"
+	"github.com/martin-helmich/distcrond/logging"
+//	logging "github.com/op/go-logging"
 )
 
 var runtimeConfig *RuntimeConfig
@@ -20,6 +22,9 @@ type JobContainer struct {
 func main() {
 	runtimeConfig = new(RuntimeConfig)
 	runtimeConfig.PopulateFromFlags()
+
+	logging.Setup()
+	log := logging.Logger
 
 	if err := runtimeConfig.IsValid(); err != nil {
 		log.Fatal(err)
@@ -35,7 +40,6 @@ func main() {
 		nodeReader := reader.NewNodeReader(nodeContainer)
 		if err := nodeReader.ReadFromDirectory(runtimeConfig.NodesDirectory()); err != nil {
 			log.Fatal(err)
-			os.Exit(1)
 		}
 		nodesLoaded <- true
 	}()
@@ -44,7 +48,6 @@ func main() {
 		jobReader := reader.NewJobReader(runtimeConfig, jobContainer)
 		if err := jobReader.ReadFromDirectory(runtimeConfig.JobsDirectory()); err != nil {
 			log.Fatal(err)
-			os.Exit(1)
 		}
 		jobsLoaded <- true
 	}()
@@ -61,7 +64,7 @@ func main() {
 
 	go func() {
 		<- c
-		log.Println("Received SIGINT")
+		log.Notice("Received SIGINT")
 		jobScheduler.Abort()
 	}()
 

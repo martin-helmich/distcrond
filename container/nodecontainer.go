@@ -2,9 +2,9 @@ package container
 
 import (
 	"errors"
-	"log"
 	"math/rand"
 	"github.com/martin-helmich/distcrond/domain"
+	"github.com/martin-helmich/distcrond/logging"
 	"fmt"
 )
 
@@ -32,8 +32,6 @@ func (c *NodeContainer) AddNode(node domain.Node) {
 		}
 		c.nodesByRole[role] = append(c.nodesByRole[role], &c.nodes[len(c.nodes)-1])
 	}
-
-	log.Printf("Added node %s\n", node.Name)
 }
 
 func (c *NodeContainer) Count() int {
@@ -51,7 +49,7 @@ func (c *NodeContainer) NodeByName(name string) (*domain.Node, error) {
 func (c *NodeContainer) NodesForJob(job *domain.Job) []*domain.Node {
 	potentialNodes := c.potentialNodesForJob(job)
 
-	log.Printf("Found %d potential nodes for job %s: %s", len(potentialNodes), job.Name, potentialNodes)
+	logging.Debug("Found %d potential nodes for job %s: %s", len(potentialNodes), job.Name, potentialNodes)
 
 	if job.Policy.Hosts == domain.POLICY_ALL {
 		return potentialNodes

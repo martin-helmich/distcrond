@@ -1,7 +1,6 @@
 package reader
 
 import (
-	"log"
 	"os"
 	"errors"
 	"fmt"
@@ -10,6 +9,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"github.com/martin-helmich/distcrond/domain"
+	"github.com/martin-helmich/distcrond/logging"
 )
 
 type NodeReader struct {
@@ -28,7 +28,7 @@ func NewNodeReader(receiver NodeReceiver) *NodeReader {
 }
 
 func (r NodeReader) ReadFromDirectory(directory string) error {
-	log.Println("Reading node configuration")
+	logging.Info("Reading node configuration")
 
 	var walk filepath.WalkFunc = func(path string, file os.FileInfo, err error) error {
 		if file.IsDir() {
@@ -36,7 +36,7 @@ func (r NodeReader) ReadFromDirectory(directory string) error {
 		}
 
 		if file.Name()[0] == '.' {
-			log.Println("Skipping", path)
+			logging.Debug("Skipping %s", path)
 			return nil
 		}
 
@@ -57,7 +57,7 @@ func (r NodeReader) ReadFromDirectory(directory string) error {
 			return wrapError(err)
 		}
 
-		log.Printf("Read node from %s: %s\n", file.Name(), node)
+		logging.Debug("Read node from %s: %s", file.Name(), node)
 
 		if validErr := node.IsValid(); validErr != nil {
 			return wrapError(validErr)

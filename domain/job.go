@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"errors"
 	"time"
+	logging "github.com/op/go-logging"
 )
 
 type JobValidationConfig interface {
@@ -20,6 +21,7 @@ type JobJson struct {
 }
 
 type Job struct {
+	// Domain properties
 	Name string
 	Description string
 	Owners []JobOwner
@@ -27,6 +29,9 @@ type Job struct {
 	Schedule Schedule
 	Command Command
 	LastExecution time.Time
+
+	// Auxiliary properties
+	Logger *logging.Logger
 }
 
 func NewJobFromJson(name string, json JobJson) (Job, error) {
@@ -60,6 +65,11 @@ func NewJobFromJson(name string, json JobJson) (Job, error) {
 		return Job{}, sErr
 	}
 
+	logger, lErr := logging.GetLogger(name)
+	if lErr != nil {
+		return Job{}, lErr
+	}
+
 	return Job {
 		Name: name,
 		Description: json.Description,
@@ -67,6 +77,7 @@ func NewJobFromJson(name string, json JobJson) (Job, error) {
 		Policy: policy,
 		Schedule: schedule,
 		Command: command,
+		Logger: logger,
 	}, nil
 }
 

@@ -5,14 +5,14 @@ import (
 	"os/exec"
 	"github.com/martin-helmich/distcrond/domain"
 	"bytes"
-	"log"
 )
 
 type LocalExecutionStrategy struct {
 	node *domain.Node
+	logger interface {Debug(string, ...interface {})}
 }
 
-func (s *LocalExecutionStrategy) ExecuteCommand(command domain.Command, report *RunReport) error {
+func (s *LocalExecutionStrategy) ExecuteCommand(command domain.Command, report *domain.RunReport) error {
 	var output bytes.Buffer
 	var start time.Time
 	var cmd *exec.Cmd
@@ -21,7 +21,7 @@ func (s *LocalExecutionStrategy) ExecuteCommand(command domain.Command, report *
 
 	args := command.Command()
 
-	log.Printf("Executing %s on local machine\n", args)
+	s.logger.Debug("Executing %s on local machine", args)
 
 	//cmd = exec.Command("/bin/sh", "-c", command)
 	cmd = &exec.Cmd{

@@ -6,7 +6,6 @@ import (
 	"time"
 	"github.com/martin-helmich/distcrond/domain"
 	"bytes"
-	"log"
 	"errors"
 	"fmt"
 	"strings"
@@ -14,24 +13,26 @@ import (
 
 type SshExecutionStrategy struct {
 	node *domain.Node
+	logger interface {Debug(string, ...interface {})}
 }
 
-func (s *SshExecutionStrategy) ExecuteCommand(command domain.Command, report *RunReport) error {
+func (s *SshExecutionStrategy) ExecuteCommand(command domain.Command, report *domain.RunReport) error {
 	var output bytes.Buffer
 	var start time.Time
 
-	key, keyErr := ioutil.ReadFile(s.node.ConnectionOptions.SshKeyFile)
+	keyString, keyErr := ioutil.ReadFile(s.node.ConnectionOptions.SshKeyFile)
 	if keyErr != nil {
 		return errors.New(fmt.Sprintf("Could not read private key file %s: %s", s.node.ConnectionOptions.SshKeyFile, keyErr))
 	}
 
-	//pk, _ := ssh.ParsePublicKey(key)
-	pk, _ := ssh.ParsePrivateKey(key)
-//	signer, _ := ssh.NewSignerFromKey(pk)
+	privateKey, keyParseError := ssh.ParsePrivateKey(keyString)
+	if keyParseError != nil {
+		return errors.New(fmt.Sprintf("Could not parse private key file %s: %s", s.node.ConnectionOptions.SshKeyFile, keyParseError))
+	}
 
 	config := ssh.ClientConfig{
 		User: s.node.ConnectionOptions.SshUser,
-		Auth: []ssh.AuthMethod{ssh.PublicKeys(pk)},
+		Auth: []ssh.AuthMethod{ssh.PublicKeys(privateKey)},
 	}
 
 	client, clientErr := ssh.Dial("tcp", s.node.ConnectionOptions.SshHost, &config)
@@ -56,16 +57,8 @@ func (s *SshExecutionStrategy) ExecuteCommand(command domain.Command, report *Ru
 		quotedArgs[i] = "'" + strings.Replace(c, "'", "\\'", -1) + "'"
 	}
 
-	log.Printf("Executing %s on remote machine\n", quotedArgs)
+	s.logger.Debug("Executing %s on remote machine\n", quotedArgs)
 
-	//cmd = exec.Command("/bin/sh", "-c", command)
-//	cmd = &exec.Cmd{
-//		Path: args[0],
-//		Args: args,
-//	}
-//	cmd.Stdout = &output
-
-//	err := cmd.Run()
 	runErr := session.Run(strings.Join(quotedArgs, " "))
 
 	report.Duration = time.Now().Sub(start)

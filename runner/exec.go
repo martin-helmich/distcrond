@@ -7,14 +7,14 @@ import (
 )
 
 type ExecutionStrategy interface {
-	ExecuteCommand(command domain.Command, report *RunReport) error
+	ExecuteCommand(command domain.Command, report *domain.RunReport) error
 }
 
-func GetStrategyForNode(node *domain.Node) (ExecutionStrategy, error) {
+func GetStrategyForNode(node *domain.Node, logger interface{Debug(string, ...interface {})}) (ExecutionStrategy, error) {
 	if node.ConnectionType == domain.CONN_LOCAL {
-		return &LocalExecutionStrategy{node}, nil
+		return &LocalExecutionStrategy{node, logger}, nil
 	} else if node.ConnectionType == domain.CONN_SSH {
-		return &SshExecutionStrategy{node}, nil
+		return &SshExecutionStrategy{node, logger}, nil
 	} else {
 		return &NullExecutionStrategy{}, errors.New(fmt.Sprintf("Unknown connection type for node %s: %s", node.Name, node.ConnectionType))
 	}
@@ -22,6 +22,6 @@ func GetStrategyForNode(node *domain.Node) (ExecutionStrategy, error) {
 
 type NullExecutionStrategy struct {}
 
-func (n *NullExecutionStrategy) ExecuteCommand(_ domain.Command, _ *RunReport) error {
+func (n *NullExecutionStrategy) ExecuteCommand(_ domain.Command, _ *domain.RunReport) error {
 	return nil
 }

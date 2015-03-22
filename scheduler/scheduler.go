@@ -1,11 +1,11 @@
 package scheduler
 
 import (
-	"log"
 	"time"
 	"github.com/martin-helmich/distcrond/container"
 	"github.com/martin-helmich/distcrond/domain"
 	"github.com/martin-helmich/distcrond/runner"
+	"github.com/martin-helmich/distcrond/logging"
 )
 
 type Scheduler struct {
@@ -32,7 +32,7 @@ func (s *Scheduler) Abort() {
 }
 
 func (s *Scheduler) Run() {
-	log.Println("Starting scheduler")
+	logging.Info("Starting scheduler")
 
 	var count int = s.jobContainer.Count()
 	var semaphores []chan bool = make([]chan bool, count)
@@ -51,7 +51,7 @@ func (s *Scheduler) Run() {
 			tickers[i] = time.NewTicker(job.Schedule.Interval)
 			for t := range tickers[i].C {
 				withLock(func() {
-					log.Printf("Executing job %s at %s", job.Name, t)
+					logging.Notice("Executing job %s at %s", job.Name, t)
 					s.runner.Run(job)
 					job.LastExecution = time.Now()
 				}, i)
@@ -61,19 +61,19 @@ func (s *Scheduler) Run() {
 
 	select {
 	case <- s.abort:
-		log.Println("Aborting")
+		logging.Notice("Aborting")
 
-		log.Println("Stopping tickers...")
+		logging.Debug("Stopping tickers...")
 		for i := 0; i < count; i ++ {
 			tickers[i].Stop()
 		}
 
-		log.Println("Waiting for running jobs...")
+		logging.Notice("Waiting for running jobs...")
 		for i := 0; i < count; i ++ {
 			semaphores[i] <- true
 		}
 
-		log.Println("Done")
+		logging.Debug("Done")
 		s.Done <- true
 	}
 }
