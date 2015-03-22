@@ -33,7 +33,9 @@ func (r *JobRunner) Run(job *domain.Job) error {
 			report := RunReport{}
 
 			strat, _ := GetStrategyForNode(node)
-			strat.ExecuteCommand(job.Command, &report)
+			if err := strat.ExecuteCommand(job.Command, &report); err != nil {
+				log.Println(err)
+			}
 
 			log.Printf("%s: Done on %s\n", job.Name, node.Name)
 			log.Printf("%s: Report: %s\n", job.Name, report)

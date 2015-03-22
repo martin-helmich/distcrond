@@ -14,5 +14,5 @@
         "Interval": "13s",
         "Reference": "03:10"
     },
-    "Command": ["/usr/bin/echo", "Test"]
+    "Command": ["/usr/sbin/ifconfig"]
 }

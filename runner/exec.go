@@ -13,6 +13,8 @@ type ExecutionStrategy interface {
 func GetStrategyForNode(node *domain.Node) (ExecutionStrategy, error) {
 	if node.ConnectionType == domain.CONN_LOCAL {
 		return &LocalExecutionStrategy{node}, nil
+	} else if node.ConnectionType == domain.CONN_SSH {
+		return &SshExecutionStrategy{node}, nil
 	} else {
 		return &NullExecutionStrategy{}, errors.New(fmt.Sprintf("Unknown connection type for node %s: %s", node.Name, node.ConnectionType))
 	}

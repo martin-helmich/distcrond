@@ -1,5 +1,10 @@
 {
     "Name": "db0001",
     "Roles": ["db"],
-    "ConnectionType": "local"
+    "ConnectionType": "ssh",
+    "ConnectionOptions": {
+        "SshUser": "mhelmich",
+        "SshHost": "localhost:22",
+        "SshKeyFile": "/home/mhelmich/.ssh/id_rsa"
+    }
 }
