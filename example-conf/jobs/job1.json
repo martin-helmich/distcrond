@@ -1,0 +1,18 @@
+{
+    "Description": "do Foo",
+    "Owners": [
+        {
+            "Name": "Martin Helmich",
+            "EmailAddress": "kontakt@martin-helmich.de"
+        }
+    ],
+    "Policy": {
+        "Hosts": "all",
+        "Roles": ["web"]
+    },
+    "Schedule": {
+        "Interval": "5s",
+        "Reference": "03:10"
+    },
+    "ShellCommand": "echo 'Hello'"
+}

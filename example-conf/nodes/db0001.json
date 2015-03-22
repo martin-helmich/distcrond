@@ -1,0 +1,5 @@
+{
+    "Name": "db0001",
+    "Roles": ["db"],
+    "ConnectionType": "local"
+}

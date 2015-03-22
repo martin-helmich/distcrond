@@ -1,0 +1,5 @@
+{
+    "Name": "local",
+    "Roles": ["web"],
+    "ConnectionType": "local"
+}

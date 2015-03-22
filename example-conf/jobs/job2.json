@@ -1,0 +1,18 @@
+{
+    "Description": "Do something else",
+    "Owners": [
+        {
+            "Name": "Martin Helmich",
+            "EmailAddress": "kontakt@martin-helmich.de"
+        }
+    ],
+    "Policy": {
+        "Hosts": "all",
+        "Roles": ["web", "db"]
+    },
+    "Schedule": {
+        "Interval": "13s",
+        "Reference": "03:10"
+    },
+    "Command": ["/usr/bin/echo", "Test"]
+}
