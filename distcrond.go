@@ -75,6 +75,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	defer storageBackend.Disconnect()
+
 	jobRunner := runner.NewJobRunner(nodeContainer, storageBackend)
 	jobScheduler := scheduler.NewScheduler(jobContainer, nodeContainer, jobRunner)
 	go jobScheduler.Run()

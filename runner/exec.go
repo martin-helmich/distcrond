@@ -7,7 +7,7 @@ import (
 )
 
 type ExecutionStrategy interface {
-	ExecuteCommand(command domain.Command, report *domain.RunReport) error
+	ExecuteCommand(command domain.Command, report *domain.RunReportItem) error
 }
 
 func GetStrategyForNode(node *domain.Node, logger interface{Debug(string, ...interface {})}) (ExecutionStrategy, error) {
@@ -22,6 +22,6 @@ func GetStrategyForNode(node *domain.Node, logger interface{Debug(string, ...int
 
 type NullExecutionStrategy struct {}
 
-func (n *NullExecutionStrategy) ExecuteCommand(_ domain.Command, _ *domain.RunReport) error {
+func (n *NullExecutionStrategy) ExecuteCommand(_ domain.Command, _ *domain.RunReportItem) error {
 	return nil
 }

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"errors"
 	"strings"
+	"encoding/json"
 )
 
 type ElasticsearchBackend struct {
@@ -39,15 +40,20 @@ func (e *ElasticsearchBackend) Connect() error {
 	return nil
 }
 
-func (e *ElasticsearchBackend) SaveReport(job *domain.Job, report *domain.RunReport) error {
-	body := report.ToJson()
+func (e *ElasticsearchBackend) Disconnect() error {
+	// HTTP is stateless, no disconnect needed. But other backends might.
+	return nil
+}
 
-	if err := e.requestDocument("reports", report.Id, "PUT", body); err != nil {
+func (e *ElasticsearchBackend) SaveReport(report *domain.RunReport) error {
+	body, _ := json.Marshal(report.ToJson())
+
+	if err := e.requestDocument("reports", report.Id, "PUT", string(body)); err != nil {
 		e.logger.Error(fmt.Sprintf("Error while persisting report %s: %s", report.Id, err))
 		return err
 	}
 
-	e.logger.Debug("Persisted report: " + body)
+	e.logger.Debug("Persisted report: " + string(body))
 	return nil
 }
 

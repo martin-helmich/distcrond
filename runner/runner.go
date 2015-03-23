@@ -6,6 +6,7 @@ import (
 	"github.com/martin-helmich/distcrond/storage"
 	"errors"
 	"fmt"
+	"time"
 )
 
 type JobRunner struct {
@@ -26,36 +27,42 @@ func (r *JobRunner) Run(job *domain.Job) error {
 	}
 
 	done := make(chan bool, len(nodes))
-
 	logger.Debug("Executing on %d nodes", len(nodes))
-	for _, node := range nodes {
-		go func(node *domain.Node) {
+
+	report := domain.RunReport{}
+	report.Initialize(job, len(nodes))
+
+	for i, node := range nodes {
+		go func(node *domain.Node, reportItem *domain.RunReportItem) {
 			logger.Debug("Executing on node %s\n", node.Name)
 
-			report := domain.RunReport{}
-			report.Initialize(job, node)
+			reportItem.Time.Start = time.Now()
 
 			strat, _ := GetStrategyForNode(node, job.Logger)
-			if err := strat.ExecuteCommand(job.Command, &report); err != nil {
+			if err := strat.ExecuteCommand(job.Command, reportItem); err != nil {
 				logger.Error("%s", err)
 			}
 
-			logger.Debug("Done on %s\n", node.Name)
-			logger.Info("Report: %s\n", report.Summary())
+			reportItem.Time.Stop = time.Now()
 
-			go func() {
-				if err := r.storage.SaveReport(job, &report); err != nil {
-					logger.Error("%s", err)
-				}
-			}()
+			logger.Debug("Done on %s\n", node.Name)
+			logger.Info("Report: %s\n", reportItem.Summary())
 
 			done <- true
-		}(node)
+		}(node, &report.Items[i])
 	}
 
 	for i := 0; i < len(nodes); i ++ {
 		<- done
 	}
+
+	report.Finalize()
+
+	go func() {
+		if err := r.storage.SaveReport(&report); err != nil {
+			logger.Error("%s", err)
+		}
+	}()
 
 	logger.Info("%s: Done on all nodes", job.Name)
 

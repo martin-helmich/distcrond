@@ -12,7 +12,7 @@ type LocalExecutionStrategy struct {
 	logger interface {Debug(string, ...interface {})}
 }
 
-func (s *LocalExecutionStrategy) ExecuteCommand(command domain.Command, report *domain.RunReport) error {
+func (s *LocalExecutionStrategy) ExecuteCommand(command domain.Command, report *domain.RunReportItem) error {
 	var output bytes.Buffer
 	var start time.Time
 	var cmd *exec.Cmd

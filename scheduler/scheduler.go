@@ -3,7 +3,7 @@ package scheduler
 import (
 	"time"
 	"github.com/martin-helmich/distcrond/container"
-	"github.com/martin-helmich/distcrond/domain"
+	. "github.com/martin-helmich/distcrond/domain"
 	"github.com/martin-helmich/distcrond/runner"
 	"github.com/martin-helmich/distcrond/logging"
 )
@@ -31,12 +31,31 @@ func (s *Scheduler) Abort() {
 	s.abort <- true
 }
 
+func (s *Scheduler) nextRunDate(job *Job, now time.Time) time.Time {
+	reference := job.Schedule.Reference
+	todayReference := time.Date(now.Year(), now.Month(), now.Day(), reference.Hour(), reference.Minute(), reference.Second(), reference.Nanosecond(), reference.Location())
+
+	if todayReference.Before(now) {
+		for todayReference.Before(now) {
+			todayReference = todayReference.Add(job.Schedule.Interval)
+		}
+	} else {
+		for todayReference.After(now) {
+			todayReference = todayReference.Add(-job.Schedule.Interval)
+		}
+		todayReference = todayReference.Add(job.Schedule.Interval)
+	}
+
+	return todayReference
+}
+
 func (s *Scheduler) Run() {
 	logging.Info("Starting scheduler")
 
-	var count int = s.jobContainer.Count()
-	var semaphores []chan bool = make([]chan bool, count)
-	var tickers chan *time.Ticker = make(chan *time.Ticker, count)
+	var count      int               = s.jobContainer.Count()
+	var semaphores []chan bool       = make([]chan bool, count)
+	var tickers    chan *time.Ticker = make(chan *time.Ticker, count)
+	var now        time.Time         = time.Now()
 
 	withLock := func(f func(), i int) {
 		semaphores[i] <- true
@@ -44,12 +63,23 @@ func (s *Scheduler) Run() {
 		<-semaphores[i]
 	}
 
+	var start []time.Time = make([]time.Time, count)
+	for i := 0; i < count; i ++ {
+		start[i] = s.nextRunDate(s.jobContainer.Get(i), now)
+	}
+
 	for i := 0; i < count; i ++ {
 		job := s.jobContainer.Get(i)
 		semaphores[i] = make(chan bool, 1)
-		go func(job *domain.Job, i int) {
+		go func(job *Job, i int) {
+			wait := start[i].Sub(now)
+			logging.Debug("Next execution of %s scheduled for %s, waiting %s", job.Name, start[i].String(), wait.String())
+			<- time.After(wait)
+
 			ticker := time.NewTicker(job.Schedule.Interval)
 			tickers <- ticker
+
+			logging.Debug("Started timer for %s", job.Name)
 
 			for t := range ticker.C {
 				withLock(func() {

@@ -16,7 +16,7 @@ type SshExecutionStrategy struct {
 	logger interface {Debug(string, ...interface {})}
 }
 
-func (s *SshExecutionStrategy) ExecuteCommand(command domain.Command, report *domain.RunReport) error {
+func (s *SshExecutionStrategy) ExecuteCommand(command domain.Command, report *domain.RunReportItem) error {
 	var output bytes.Buffer
 	var start time.Time
 
