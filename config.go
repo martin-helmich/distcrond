@@ -13,12 +13,19 @@ const (
 )
 
 type RuntimeConfig struct {
+	// General configuration
 	jobsDirectory string
 	nodesDirectory string
 	allowNoOwner bool
 	storageBackend string
+
+	// Elasticsearch storage backend
 	esHost string
 	esPort int
+
+	// Profiling configuration
+	cpuprofile string
+	memprofile string
 }
 
 func (c *RuntimeConfig) JobsDirectory() string {
@@ -45,6 +52,14 @@ func (c *RuntimeConfig) ElasticSearchPort() int {
 	return c.esPort
 }
 
+func (c *RuntimeConfig) CpuProfilingEnabled() bool {
+	return c.cpuprofile != ""
+}
+
+func (c *RuntimeConfig) CpuProfilingTarget() string {
+	return c.cpuprofile
+}
+
 func (c *RuntimeConfig) PopulateFromFlags() {
 	flag.StringVar(&c.jobsDirectory, "jobsDirectory", "/etc/distcron/jobs.d", "Directory from which to load job definitions")
 	flag.StringVar(&c.nodesDirectory, "nodesDirectory", "/etc/distcron/nodes.d", "Directory from which to load node definitions")
@@ -52,6 +67,9 @@ func (c *RuntimeConfig) PopulateFromFlags() {
 	flag.StringVar(&c.storageBackend, "storage", STORAGE_ELASTICSEARCH, "Which storage backend to use ('es' or 'redis')")
 	flag.StringVar(&c.esHost, "esHost", "localhost", "Elasticsearch host")
 	flag.IntVar(&c.esPort, "esPort", 9200, "Elasticsearch port")
+
+	flag.StringVar(&c.cpuprofile, "cpuprofile", "", "Write CPU profile to file")
+
 	flag.Parse()
 }
 

@@ -10,6 +10,7 @@ import (
 	"github.com/martin-helmich/distcrond/runner"
 	"github.com/martin-helmich/distcrond/logging"
 	"github.com/martin-helmich/distcrond/storage"
+	"runtime/pprof"
 )
 
 var runtimeConfig *RuntimeConfig
@@ -27,7 +28,18 @@ func main() {
 
 	if err := runtimeConfig.IsValid(); err != nil {
 		log.Fatal(err)
-		os.Exit(1)
+	}
+
+	if runtimeConfig.CpuProfilingEnabled() {
+		f, err := os.Create(runtimeConfig.CpuProfilingTarget())
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		log.Info("Starting CPU profiling")
+
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
 	}
 
 	nodeContainer := container.NewNodeContainer(5)
