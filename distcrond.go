@@ -1,8 +1,7 @@
 package main
 
-//import "log"
-import "os"
 import (
+	"os"
 	"os/signal"
 	"github.com/martin-helmich/distcrond/domain"
 	"github.com/martin-helmich/distcrond/reader"
@@ -10,7 +9,7 @@ import (
 	"github.com/martin-helmich/distcrond/scheduler"
 	"github.com/martin-helmich/distcrond/runner"
 	"github.com/martin-helmich/distcrond/logging"
-//	logging "github.com/op/go-logging"
+	"github.com/martin-helmich/distcrond/storage"
 )
 
 var runtimeConfig *RuntimeConfig
@@ -55,7 +54,16 @@ func main() {
 	<-nodesLoaded
 	<-jobsLoaded
 
-	jobRunner := runner.NewJobRunner(nodeContainer)
+	storageBackend, err := storage.BuildStorageBackend(runtimeConfig)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := storageBackend.Connect(); err != nil {
+		log.Fatal(err)
+	}
+
+	jobRunner := runner.NewJobRunner(nodeContainer, storageBackend)
 	jobScheduler := scheduler.NewScheduler(jobContainer, nodeContainer, jobRunner)
 	go jobScheduler.Run()
 
