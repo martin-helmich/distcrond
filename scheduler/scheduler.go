@@ -36,7 +36,7 @@ func (s *Scheduler) Run() {
 
 	var count int = s.jobContainer.Count()
 	var semaphores []chan bool = make([]chan bool, count)
-	var tickers []*time.Ticker = make([]*time.Ticker, count)
+	var tickers chan *time.Ticker = make(chan *time.Ticker, count)
 
 	withLock := func(f func(), i int) {
 		semaphores[i] <- true
@@ -48,8 +48,10 @@ func (s *Scheduler) Run() {
 		job := s.jobContainer.Get(i)
 		semaphores[i] = make(chan bool, 1)
 		go func(job *domain.Job, i int) {
-			tickers[i] = time.NewTicker(job.Schedule.Interval)
-			for t := range tickers[i].C {
+			ticker := time.NewTicker(job.Schedule.Interval)
+			tickers <- ticker
+
+			for t := range ticker.C {
 				withLock(func() {
 					logging.Notice("Executing job %s at %s", job.Name, t)
 					s.runner.Run(job)
@@ -65,7 +67,7 @@ func (s *Scheduler) Run() {
 
 		logging.Debug("Stopping tickers...")
 		for i := 0; i < count; i ++ {
-			tickers[i].Stop()
+			(<- tickers).Stop()
 		}
 
 		logging.Notice("Waiting for running jobs...")
