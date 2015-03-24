@@ -8,6 +8,7 @@ import (
 )
 
 const (
+	STORAGE_PLAINFILES = "plain"
 	STORAGE_ELASTICSEARCH = "es"
 	STORAGE_REDIS = "redis"
 )
@@ -22,6 +23,9 @@ type RuntimeConfig struct {
 	// Elasticsearch storage backend
 	esHost string
 	esPort int
+
+	// Plainfiles storage backend
+	pfPath string
 
 	// Profiling configuration
 	cpuprofile string
@@ -52,6 +56,10 @@ func (c *RuntimeConfig) ElasticSearchPort() int {
 	return c.esPort
 }
 
+func (c *RuntimeConfig) LogDirectory() string {
+	return c.pfPath
+}
+
 func (c *RuntimeConfig) CpuProfilingEnabled() bool {
 	return c.cpuprofile != ""
 }
@@ -64,9 +72,12 @@ func (c *RuntimeConfig) PopulateFromFlags() {
 	flag.StringVar(&c.jobsDirectory, "jobsDirectory", "/etc/distcron/jobs.d", "Directory from which to load job definitions")
 	flag.StringVar(&c.nodesDirectory, "nodesDirectory", "/etc/distcron/nodes.d", "Directory from which to load node definitions")
 	flag.BoolVar(&c.allowNoOwner, "allowNoOwner", false, "Set to allow jobs to have no owners")
-	flag.StringVar(&c.storageBackend, "storage", STORAGE_ELASTICSEARCH, "Which storage backend to use ('es' or 'redis')")
+	flag.StringVar(&c.storageBackend, "storage", STORAGE_ELASTICSEARCH, "Which storage backend to use ('es' or 'plain')")
+
 	flag.StringVar(&c.esHost, "esHost", "localhost", "Elasticsearch host")
 	flag.IntVar(&c.esPort, "esPort", 9200, "Elasticsearch port")
+
+	flag.StringVar(&c.pfPath, "logDirectory", "/var/log/distcrond", "Directory to write log files to (for 'plain' storage backend')")
 
 	flag.StringVar(&c.cpuprofile, "cpuprofile", "", "Write CPU profile to file")
 
@@ -93,7 +104,16 @@ func (c *RuntimeConfig) IsValid() error {
 		return err
 	}
 
-	if c.storageBackend != STORAGE_ELASTICSEARCH {
+	switch c.storageBackend {
+	case STORAGE_ELASTICSEARCH:
+		if c.esHost != "" {
+			return errors.New("No Elasticsearch host specified")
+		}
+	case STORAGE_PLAINFILES:
+		if err := checkDir(c.pfPath, "log files target directory"); err != nil {
+			return err
+		}
+	default:
 		return errors.New(fmt.Sprintf("Unknown storage backend '%s', must be '" + STORAGE_ELASTICSEARCH + "'", c.storageBackend))
 	}
 

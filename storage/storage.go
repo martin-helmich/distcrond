@@ -8,8 +8,11 @@ import (
 
 type StorageBackendConfiguration interface {
 	StorageBackend() string
+
 	ElasticSearchHost() string
 	ElasticSearchPort() int
+
+	LogDirectory() string
 }
 
 type StorageBackend interface {
@@ -19,13 +22,15 @@ type StorageBackend interface {
 }
 
 func BuildStorageBackend(config StorageBackendConfiguration) (StorageBackend, error) {
-	switch {
-	case config.StorageBackend() == "es":
+	switch config.StorageBackend() {
+	case "es":
 		return NewElasticsearchBackend(
 			config.ElasticSearchHost(),
 			config.ElasticSearchPort(),
 			"distcrond",
 		), nil
+	case "plain":
+		return NewPlainStorageBackend(config.LogDirectory()), nil
 	default:
 		return &ElasticsearchBackend{}, errors.New(fmt.Sprintf("Unknown storage backend type: '%s'", config.StorageBackend()))
 	}
