@@ -1,5 +1,5 @@
 {
-    "Name": "local",
-    "Roles": ["web"],
-    "ConnectionType": "local"
+    "name": "local",
+    "roles": ["web"],
+    "connection_type": "local"
 }

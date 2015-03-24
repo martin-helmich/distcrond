@@ -38,8 +38,9 @@ func (r *JobRunner) Run(job *domain.Job) error {
 
 			reportItem.Time.Start = time.Now()
 
-			strat, _ := GetStrategyForNode(node, job.Logger)
-			if err := strat.ExecuteCommand(job.Command, reportItem); err != nil {
+			strat := node.ExecutionStrategy
+
+			if err := strat.ExecuteCommand(job.Command, reportItem, job.Logger); err != nil {
 				logger.Error("%s", err)
 			}
 

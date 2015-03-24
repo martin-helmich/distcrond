@@ -2,26 +2,30 @@ package runner
 
 import (
 	"errors"
-	"github.com/martin-helmich/distcrond/domain"
+	. "github.com/martin-helmich/distcrond/domain"
+	logging "github.com/op/go-logging"
 	"fmt"
 )
 
-type ExecutionStrategy interface {
-	ExecuteCommand(command domain.Command, report *domain.RunReportItem) error
-}
+func GetStrategyForNode(node *Node) (ExecutionStrategy, error) {
+	switch {
+	case node.ConnectionType == CONN_LOCAL:
+		return &LocalExecutionStrategy{node}, nil
 
-func GetStrategyForNode(node *domain.Node, logger interface{Debug(string, ...interface {})}) (ExecutionStrategy, error) {
-	if node.ConnectionType == domain.CONN_LOCAL {
-		return &LocalExecutionStrategy{node, logger}, nil
-	} else if node.ConnectionType == domain.CONN_SSH {
-		return &SshExecutionStrategy{node, logger}, nil
-	} else {
+	case node.ConnectionType == CONN_SSH:
+		if str, err := NewSshExecutionStrategy(node); err != nil {
+			return nil, err
+		} else {
+			return str, nil
+		}
+
+	default:
 		return &NullExecutionStrategy{}, errors.New(fmt.Sprintf("Unknown connection type for node %s: %s", node.Name, node.ConnectionType))
 	}
 }
 
 type NullExecutionStrategy struct {}
 
-func (n *NullExecutionStrategy) ExecuteCommand(_ domain.Command, _ *domain.RunReportItem) error {
+func (n *NullExecutionStrategy) ExecuteCommand(_ Command, _ *RunReportItem, _ *logging.Logger) error {
 	return nil
 }

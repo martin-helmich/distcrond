@@ -3,6 +3,7 @@ package domain
 import (
 	"errors"
 	"fmt"
+	logging "github.com/op/go-logging"
 )
 
 const (
@@ -10,10 +11,12 @@ const (
 	CONN_SSH = "ssh"
 )
 
+type ConnectionType string
+
 type ConnectionOptions struct {
-	SshHost string
-	SshUser string
-	SshKeyFile string
+	SshHost string `json:"ssh_host"`
+	SshUser string `json:"ssh_user"`
+	SshKeyFile string `json:"ssh_private_key_file"`
 }
 
 func (o ConnectionOptions) SetDefaults(forType string) {
@@ -24,8 +27,9 @@ func (o ConnectionOptions) SetDefaults(forType string) {
 	}
 }
 
-func (o ConnectionOptions) IsValid(forType string) error {
-	if forType == CONN_SSH {
+func (o ConnectionOptions) IsValid(forType ConnectionType) error {
+	switch {
+	case forType == CONN_SSH:
 		if len(o.SshHost) == 0 {
 			return errors.New("SSH host is empty")
 		}
@@ -37,18 +41,42 @@ func (o ConnectionOptions) IsValid(forType string) error {
 		if len(o.SshKeyFile) == 0 {
 			return errors.New("SSH key is empty")
 		}
-	} else if forType == CONN_LOCAL {
 
+	case forType == CONN_LOCAL:
+		return nil
 	}
 
 	return nil
 }
 
+type ExecutionStrategy interface {
+	ExecuteCommand(command Command, report *RunReportItem, logger *logging.Logger) error
+}
+
+type NodeJson struct {
+	Name string `json:"name"`
+	Roles []string `json:"roles"`
+	ConnectionType string `json:"connection_type"`
+	ConnectionOptions ConnectionOptions `json:"connection_options"`
+}
+
 type Node struct {
 	Name string
 	Roles []string
-	ConnectionType string
+	ConnectionType    ConnectionType
 	ConnectionOptions ConnectionOptions
+
+	ExecutionStrategy ExecutionStrategy
+}
+
+func NewNodeFromJson(name string, json NodeJson) (Node, error) {
+	node := Node{}
+	node.Name = name
+	node.Roles = json.Roles
+	node.ConnectionType = ConnectionType(json.ConnectionType)
+	node.ConnectionOptions = json.ConnectionOptions
+
+	return node, nil
 }
 
 func (n Node) IsValid() error {

@@ -75,7 +75,6 @@ func (r *RunReport) Initialize(job *Job, nodeCount int) {
 
 func (r *RunReport) Finalize() {
 	r.Time.Stop = time.Now()
-	r.Duration = r.Time.Stop.Sub(r.Time.Start)
 }
 
 func (r *RunReport) successOrFail() string {
@@ -132,7 +131,7 @@ type RunReportItem struct {
 
 func (i *RunReportItem) Summary() string {
 	date, _ := i.Time.Start.MarshalText()
-	return fmt.Sprintf("On %s at %s (duration %s): %s, %d bytes of output", i.Node.Name, date, i.Duration.String(), i.successOrFail(), len(i.Output))
+	return fmt.Sprintf("On %s at %s (duration %s): %s, %d bytes of output", i.Node.Name, date, i.Duration().String(), i.successOrFail(), len(i.Output))
 }
 
 func (i *RunReportItem) successOrFail() string {

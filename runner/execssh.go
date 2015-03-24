@@ -3,8 +3,8 @@ package runner
 import (
 	"golang.org/x/crypto/ssh"
 	"io/ioutil"
-	"time"
-	"github.com/martin-helmich/distcrond/domain"
+	. "github.com/martin-helmich/distcrond/domain"
+	logging "github.com/op/go-logging"
 	"bytes"
 	"errors"
 	"fmt"
@@ -12,30 +12,53 @@ import (
 )
 
 type SshExecutionStrategy struct {
-	node *domain.Node
-	logger interface {Debug(string, ...interface {})}
+	node *Node
+	privateKey ssh.Signer
+	clientConfig ssh.ClientConfig
 }
 
-func (s *SshExecutionStrategy) ExecuteCommand(command domain.Command, report *domain.RunReportItem) error {
-	var output bytes.Buffer
-	var start time.Time
+func NewSshExecutionStrategy (node *Node) (*SshExecutionStrategy, error) {
+	strat := new(SshExecutionStrategy)
 
-	keyString, keyErr := ioutil.ReadFile(s.node.ConnectionOptions.SshKeyFile)
+	keyString, keyErr := ioutil.ReadFile(node.ConnectionOptions.SshKeyFile)
 	if keyErr != nil {
-		return errors.New(fmt.Sprintf("Could not read private key file %s: %s", s.node.ConnectionOptions.SshKeyFile, keyErr))
+		return nil, errors.New(fmt.Sprintf("Could not read private key file %s: %s", node.ConnectionOptions.SshKeyFile, keyErr))
 	}
 
 	privateKey, keyParseError := ssh.ParsePrivateKey(keyString)
 	if keyParseError != nil {
-		return errors.New(fmt.Sprintf("Could not parse private key file %s: %s", s.node.ConnectionOptions.SshKeyFile, keyParseError))
+		return nil, errors.New(fmt.Sprintf("Could not parse private key file %s: %s", node.ConnectionOptions.SshKeyFile, keyParseError))
 	}
 
-	config := ssh.ClientConfig{
-		User: s.node.ConnectionOptions.SshUser,
+	strat.node         = node
+	strat.privateKey   = privateKey
+	strat.clientConfig = ssh.ClientConfig{
+		User: node.ConnectionOptions.SshUser,
 		Auth: []ssh.AuthMethod{ssh.PublicKeys(privateKey)},
 	}
 
-	client, clientErr := ssh.Dial("tcp", s.node.ConnectionOptions.SshHost, &config)
+	return strat, nil
+}
+
+func (s *SshExecutionStrategy) ExecuteCommand(command Command, report *RunReportItem, logger *logging.Logger) error {
+	var output bytes.Buffer
+
+	//	keyString, keyErr := ioutil.ReadFile(s.node.ConnectionOptions.SshKeyFile)
+	//	if keyErr != nil {
+	//		return errors.New(fmt.Sprintf("Could not read private key file %s: %s", s.node.ConnectionOptions.SshKeyFile, keyErr))
+	//	}
+	//
+	//	privateKey, keyParseError := ssh.ParsePrivateKey(keyString)
+	//	if keyParseError != nil {
+	//		return errors.New(fmt.Sprintf("Could not parse private key file %s: %s", s.node.ConnectionOptions.SshKeyFile, keyParseError))
+	//	}
+	//
+	//	config := ssh.ClientConfig{
+	//		User: s.node.ConnectionOptions.SshUser,
+	//		Auth: []ssh.AuthMethod{ssh.PublicKeys(privateKey)},
+	//	}
+
+	client, clientErr := ssh.Dial("tcp", s.node.ConnectionOptions.SshHost, &s.clientConfig)
 	if clientErr != nil {
 		return errors.New(fmt.Sprintf("Could not open connection to %s: %s", s.node.Name, clientErr))
 	}
@@ -49,19 +72,16 @@ func (s *SshExecutionStrategy) ExecuteCommand(command domain.Command, report *do
 
 	session.Stdout = &output
 
-	start = time.Now()
-
 	originalArgs := command.Command()
 	quotedArgs := make([]string, len(originalArgs))
 	for i, c := range originalArgs {
 		quotedArgs[i] = "'" + strings.Replace(c, "'", "\\'", -1) + "'"
 	}
 
-	s.logger.Debug("Executing %s on remote machine\n", quotedArgs)
+	logger.Debug("Executing %s on remote machine\n", quotedArgs)
 
 	runErr := session.Run(strings.Join(quotedArgs, " "))
 
-	report.Duration = time.Now().Sub(start)
 	report.Output = output.String()
 	report.Node = s.node
 
