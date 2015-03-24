@@ -84,3 +84,9 @@ func (e *ElasticsearchBackend) request(path string, method string, body string) 
 
 	return nil
 }
+
+func (p *ElasticsearchBackend) ReportsForJob(job *domain.Job) ([]domain.RunReportJson, error) {
+	// TODO: Implement me!
+	reports := make([]domain.RunReportJson, 0)
+	return reports, nil
+}

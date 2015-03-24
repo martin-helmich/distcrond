@@ -19,6 +19,7 @@ type StorageBackend interface {
 	Connect() error
 	Disconnect() error
 	SaveReport(report *domain.RunReport) error
+	ReportsForJob(job *domain.Job) ([]domain.RunReportJson, error)
 }
 
 func BuildStorageBackend(config StorageBackendConfiguration) (StorageBackend, error) {

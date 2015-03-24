@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 	logging "github.com/op/go-logging"
+	"sync"
 )
 
 type JobValidationConfig interface {
@@ -32,6 +33,7 @@ type Job struct {
 
 	// Auxiliary properties
 	Logger *logging.Logger
+	Lock sync.RWMutex
 }
 
 func NewJobFromJson(name string, json JobJson) (Job, error) {

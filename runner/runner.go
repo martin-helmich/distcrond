@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
+	"sync/atomic"
 )
 
 type JobRunner struct {
@@ -29,6 +30,9 @@ func (r *JobRunner) Run(job *domain.Job) error {
 	done := make(chan bool, len(nodes))
 	logger.Debug("Executing on %d nodes", len(nodes))
 
+	job.Lock.Lock()
+	defer job.Lock.Unlock()
+
 	report := domain.RunReport{}
 	report.Initialize(job, len(nodes))
 
@@ -37,6 +41,8 @@ func (r *JobRunner) Run(job *domain.Job) error {
 			logger.Debug("Executing on node %s\n", node.Name)
 
 			reportItem.Time.Start = time.Now()
+			atomic.AddInt32(&node.RunningJobs, 1)
+//			node.RunningJobs ++
 
 			strat := node.ExecutionStrategy
 
@@ -44,6 +50,8 @@ func (r *JobRunner) Run(job *domain.Job) error {
 				logger.Error("%s", err)
 			}
 
+//			node.RunningJobs --
+			atomic.AddInt32(&node.RunningJobs, -1)
 			reportItem.Time.Stop = time.Now()
 
 			logger.Debug("Done on %s\n", node.Name)
@@ -58,6 +66,7 @@ func (r *JobRunner) Run(job *domain.Job) error {
 	}
 
 	report.Finalize()
+	job.LastExecution = time.Now()
 
 	go func() {
 		if err := r.storage.SaveReport(&report); err != nil {

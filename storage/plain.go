@@ -7,11 +7,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
+	"sync/atomic"
+	"time"
 )
 
 type PlainFileStorageBackend struct {
 	logDirectory string
 	logger *logging.Logger
+	counter int64
 }
 
 func NewPlainStorageBackend(logDirectory string) *PlainFileStorageBackend {
@@ -38,6 +42,42 @@ func (p *PlainFileStorageBackend) SaveReport(report *domain.RunReport) error {
 		return err
 	}
 
+	atomic.AddInt64(&p.counter, 1)
+
 	p.logger.Debug("Persisted report: " + string(body))
 	return nil
+}
+
+func (p *PlainFileStorageBackend) ReportsForJob(job *domain.Job) ([]domain.RunReportJson, error) {
+	start := time.Now()
+	reports := make([]domain.RunReportJson, 0, atomic.LoadInt64(&p.counter))
+
+	var walk filepath.WalkFunc = func(path string, file os.FileInfo, err error) error {
+		if file.IsDir() || file.Name()[0] == '.' {
+			return nil
+		}
+
+		if content, err := ioutil.ReadFile(path); err != nil {
+			return err
+		} else {
+			report := domain.RunReportJson{}
+			if jErr := json.Unmarshal(content, &report); jErr != nil {
+				return jErr
+			}
+
+			if report.Job == job.Name {
+//				reportList <- report
+				reports = append(reports, report)
+			}
+			return nil
+		}
+	}
+
+	if err := filepath.Walk(p.logDirectory, walk); err != nil {
+		return nil, err
+	}
+
+	p.logger.Debug("Took %s for loading reports for job %s", time.Now().Sub(start).String(), job.Name)
+
+	return reports, nil
 }

@@ -85,7 +85,6 @@ func (s *Scheduler) Run() {
 				withLock(func() {
 					logging.Notice("Executing job %s at %s", job.Name, t)
 					s.runner.Run(job)
-					job.LastExecution = time.Now()
 				}, i)
 			}
 		}(job, i)

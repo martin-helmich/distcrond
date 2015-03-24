@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	logging "github.com/op/go-logging"
+	"sync"
 )
 
 const (
@@ -11,7 +12,13 @@ const (
 	CONN_SSH = "ssh"
 )
 
+const (
+	STATUS_UP = iota
+	STATUS_DOWN
+)
+
 type ConnectionType string
+type NodeStatus int
 
 type ConnectionOptions struct {
 	SshHost string `json:"ssh_host"`
@@ -61,12 +68,15 @@ type NodeJson struct {
 }
 
 type Node struct {
-	Name string
-	Roles []string
+	Name              string
+	Roles             []string
 	ConnectionType    ConnectionType
 	ConnectionOptions ConnectionOptions
+	Status            NodeStatus
+	RunningJobs       int32
 
 	ExecutionStrategy ExecutionStrategy
+	Lock              sync.RWMutex
 }
 
 func NewNodeFromJson(name string, json NodeJson) (Node, error) {

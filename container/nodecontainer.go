@@ -38,6 +38,10 @@ func (c *NodeContainer) Count() int {
 	return len(c.nodes)
 }
 
+func (c *NodeContainer) Get(i int) *domain.Node {
+	return &c.nodes[i]
+}
+
 func (c *NodeContainer) NodeByName(name string) (*domain.Node, error) {
 	if node, ok := c.nodesByName[name]; ok {
 		return node, nil

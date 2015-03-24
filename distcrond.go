@@ -10,6 +10,7 @@ import (
 	"github.com/martin-helmich/distcrond/runner"
 	"github.com/martin-helmich/distcrond/logging"
 	"github.com/martin-helmich/distcrond/storage"
+	"github.com/martin-helmich/distcrond/server"
 	"runtime/pprof"
 )
 
@@ -80,6 +81,9 @@ func main() {
 	jobRunner := runner.NewJobRunner(nodeContainer, storageBackend)
 	jobScheduler := scheduler.NewScheduler(jobContainer, nodeContainer, jobRunner)
 	go jobScheduler.Run()
+
+	restServer := server.NewRestServer(8080, nodeContainer, jobContainer, storageBackend, logging.GetLogger("restapi"))
+	go restServer.Start()
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)

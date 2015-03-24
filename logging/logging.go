@@ -19,6 +19,11 @@ func Setup() {
 	Logger.Debug("Set up logging")
 }
 
+func GetLogger(name string) *logging.Logger {
+	logger, _ := logging.GetLogger(name)
+	return logger
+}
+
 // Critical logs a message using CRITICAL as log level.
 func Critical(format string, args ...interface{}) {
 	Logger.Critical(format, args...)
