@@ -7,6 +7,7 @@ import (
 	"github.com/martin-helmich/distcrond/container"
 	"github.com/julienschmidt/httprouter"
 	"github.com/martin-helmich/distcrond/storage"
+	"time"
 )
 
 type LinkResource struct {
@@ -28,6 +29,16 @@ type SubHandler struct {
 	server *RestServer
 }
 
+func (s *RestServer) decorate(handler httprouter.Handle) httprouter.Handle {
+	return func(resp http.ResponseWriter, req *http.Request, par httprouter.Params) {
+		start := time.Now()
+		handler(resp, req, par)
+		dur := time.Now().Sub(start)
+
+		s.logger.Info("%s %s %s", req.Method, req.URL.Path, dur.String())
+	}
+}
+
 func NewRestServer(port int, nodes *container.NodeContainer, jobs *container.JobContainer, store storage.StorageBackend, logger *logging.Logger) *RestServer {
 	server := new(RestServer)
 	server.nodes = nodes
@@ -40,11 +51,11 @@ func NewRestServer(port int, nodes *container.NodeContainer, jobs *container.Job
 	reporthandler := ReportHandler{server}
 
 	router := httprouter.New()
-	router.GET("/nodes", nodehandler.NodeList)
-	router.GET("/nodes/:node", nodehandler.NodeSingle)
-	router.GET("/jobs", jobhandler.JobList)
-	router.GET("/jobs/:job", jobhandler.JobSingle)
-	router.GET("/jobs/:job/reports", reporthandler.ReportsByJob)
+	router.GET("/nodes", server.decorate(nodehandler.NodeList))
+	router.GET("/nodes/:node", server.decorate(nodehandler.NodeSingle))
+	router.GET("/jobs", server.decorate(jobhandler.JobList))
+	router.GET("/jobs/:job", server.decorate(jobhandler.JobSingle))
+	router.GET("/jobs/:job/reports", server.decorate(reporthandler.ReportsByJob))
 
 	server.mux = router
 	server.server = http.Server{
