@@ -68,6 +68,14 @@ func (c *RuntimeConfig) CpuProfilingTarget() string {
 	return c.cpuprofile
 }
 
+func (c *RuntimeConfig) MemProfilingEnabled() bool {
+	return c.memprofile != ""
+}
+
+func (c *RuntimeConfig) MemProfilingTarget() string {
+	return c.memprofile
+}
+
 func (c *RuntimeConfig) PopulateFromFlags() {
 	flag.StringVar(&c.jobsDirectory, "jobsDirectory", "/etc/distcron/jobs.d", "Directory from which to load job definitions")
 	flag.StringVar(&c.nodesDirectory, "nodesDirectory", "/etc/distcron/nodes.d", "Directory from which to load node definitions")
@@ -80,6 +88,7 @@ func (c *RuntimeConfig) PopulateFromFlags() {
 	flag.StringVar(&c.pfPath, "logDirectory", "/var/log/distcrond", "Directory to write log files to (for 'plain' storage backend')")
 
 	flag.StringVar(&c.cpuprofile, "cpuprofile", "", "Write CPU profile to file")
+	flag.StringVar(&c.memprofile, "memprofile", "", "Write Memory profile to file")
 
 	flag.Parse()
 }

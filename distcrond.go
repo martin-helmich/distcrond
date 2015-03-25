@@ -43,6 +43,16 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
+	if runtimeConfig.MemProfilingEnabled() {
+		f, err := os.Create(runtimeConfig.MemProfilingTarget())
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		log.Info("Start memory profiling")
+		defer pprof.WriteHeapProfile(f)
+	}
+
 	nodeContainer := container.NewNodeContainer(5)
 	jobContainer := container.NewJobContainer(10)
 
