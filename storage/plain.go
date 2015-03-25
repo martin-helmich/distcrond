@@ -16,11 +16,18 @@ type PlainFileStorageBackend struct {
 	logDirectory string
 	logger *logging.Logger
 	counter int64
+//	reports []domain.RunReportJson
+//	timer *time.Timer
 }
 
 func NewPlainStorageBackend(logDirectory string) *PlainFileStorageBackend {
 	logger, _ := logging.GetLogger("persistence_plain")
-	return &PlainFileStorageBackend{logDirectory: logDirectory, logger: logger}
+	return &PlainFileStorageBackend{
+		logDirectory: logDirectory,
+		logger: logger,
+		counter: 0,
+//		make([]domain.RunReportJson, 0, 64),
+	}
 }
 
 func (p *PlainFileStorageBackend) Connect() error {
@@ -32,7 +39,8 @@ func (p *PlainFileStorageBackend) Disconnect() error {
 }
 
 func (p *PlainFileStorageBackend) SaveReport(report *domain.RunReport) error {
-	body, _ := json.MarshalIndent(report.ToJson(), "", "    ")
+	jsonReport := report.ToJson()
+	body, _ := json.MarshalIndent(jsonReport, "", "    ")
 	time, _ := report.Time.Start.MarshalText()
 
 	filename := fmt.Sprintf("%s/%s-%s-%s.json", p.logDirectory, time, report.Job.Name, report.Id)
@@ -43,6 +51,7 @@ func (p *PlainFileStorageBackend) SaveReport(report *domain.RunReport) error {
 	}
 
 	atomic.AddInt64(&p.counter, 1)
+//	p.reports = append(p.reports, jsonReport)
 
 	p.logger.Debug("Persisted report: " + string(body))
 	return nil
@@ -52,7 +61,7 @@ func (p *PlainFileStorageBackend) ReportsForJob(job *domain.Job) ([]domain.RunRe
 	start := time.Now()
 	reports := make([]domain.RunReportJson, 0, atomic.LoadInt64(&p.counter))
 
-	var walk filepath.WalkFunc = func(path string, file os.FileInfo, err error) error {
+	var walk filepath.WalkFunc = func(path string, file os.FileInfo, _ error) error {
 		if file.IsDir() || file.Name()[0] == '.' {
 			return nil
 		}
@@ -66,7 +75,6 @@ func (p *PlainFileStorageBackend) ReportsForJob(job *domain.Job) ([]domain.RunRe
 			}
 
 			if report.Job == job.Name {
-//				reportList <- report
 				reports = append(reports, report)
 			}
 			return nil
