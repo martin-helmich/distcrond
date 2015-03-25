@@ -1,18 +1,18 @@
 {
-    "Description": "do Foo",
-    "Owners": [
+    "description": "do Foo",
+    "owners": [
         {
-            "Name": "Martin Helmich",
-            "EmailAddress": "kontakt@martin-helmich.de"
+            "name": "Martin Helmich",
+            "email_address": "kontakt@martin-helmich.de"
         }
     ],
-    "Policy": {
-        "Hosts": "all",
-        "Roles": ["web"]
+    "policy": {
+        "select": "all",
+        "roles": ["web"]
     },
-    "Schedule": {
-        "Interval": "5s",
-        "Reference": "03:10"
+    "schedule": {
+        "interval": "5m",
+        "reference": "03:10"
     },
-    "ShellCommand": "echo 'Hello'"
+    "shell_command": "echo 'Hello'"
 }

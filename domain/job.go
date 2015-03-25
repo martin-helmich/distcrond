@@ -13,12 +13,12 @@ type JobValidationConfig interface {
 }
 
 type JobJson struct {
-	Description string
-	Owners []JobOwnerJson
-	Policy ExecutionPolicyJson
-	Schedule ScheduleJson
-	ShellCommand string
-	Command []string
+	Description string `json:"description"`
+	Owners []JobOwnerJson `json:"owners"`
+	Policy ExecutionPolicyJson `json:"policy"`
+	Schedule ScheduleJson `json:"schedule"`
+	ShellCommand string `json:"shell_command"`
+	Command []string `json:"command"`
 }
 
 type Job struct {

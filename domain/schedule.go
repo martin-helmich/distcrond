@@ -5,8 +5,8 @@ import (
 )
 
 type ScheduleJson struct {
-	Interval string
-	Reference string
+	Interval string `json:"interval"`
+	Reference string `json:"reference"`
 }
 
 type Schedule struct {

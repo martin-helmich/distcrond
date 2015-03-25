@@ -8,9 +8,9 @@ const (
 )
 
 type ExecutionPolicyJson struct {
-	Hosts string
-	HostList []string
-	Roles []string
+	Hosts string `json:"select"`
+	HostList []string `json:"hosts"`
+	Roles []string `json:"roles"`
 }
 
 type ExecutionPolicy struct {

@@ -1,18 +1,18 @@
 {
-    "Description": "Do something else",
-    "Owners": [
+    "description": "Do something else",
+    "owners": [
         {
-            "Name": "Martin Helmich",
-            "EmailAddress": "kontakt@martin-helmich.de"
+            "name": "Martin Helmich",
+            "email_address": "kontakt@martin-helmich.de"
         }
     ],
-    "Policy": {
-        "Hosts": "all",
-        "Roles": ["web", "db"]
+    "policy": {
+        "select": "all",
+        "roles": ["web", "db"]
     },
-    "Schedule": {
-        "Interval": "13s",
-        "Reference": "03:10"
+    "schedule": {
+        "interval": "10m",
+        "reference": "03:10"
     },
-    "Command": ["/usr/sbin/ifconfig"]
+    "command": ["/usr/sbin/ifconfig"]
 }

@@ -3,8 +3,8 @@ package domain
 import "errors"
 
 type JobOwnerJson struct {
-	Name string
-	EmailAddress string
+	Name string `json:"name"`
+	EmailAddress string `json:"email_address"`
 }
 
 type JobOwner struct {
