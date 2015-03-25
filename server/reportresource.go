@@ -25,8 +25,8 @@ func (h *ReportHandler) ReportsByJob(resp http.ResponseWriter, req *http.Request
 		return
 	}
 
-	body, _ := json.MarshalIndent(reports, "", "    ")
-
 	resp.Header().Set("Content-Type", "application/json")
+
+	body, _ := json.Marshal(reports)
 	resp.Write(body)
 }
