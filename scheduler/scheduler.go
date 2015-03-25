@@ -6,6 +6,7 @@ import (
 	. "github.com/martin-helmich/distcrond/domain"
 	"github.com/martin-helmich/distcrond/runner"
 	"github.com/martin-helmich/distcrond/logging"
+	"sync/atomic"
 )
 
 type Scheduler struct {
@@ -57,6 +58,8 @@ func (s *Scheduler) Run() {
 	var tickers    chan *time.Ticker = make(chan *time.Ticker, count)
 	var now        time.Time         = time.Now()
 
+	var startedTickers int64 = 0
+
 	withLock := func(f func(), i int) {
 		semaphores[i] <- true
 		f()
@@ -75,6 +78,8 @@ func (s *Scheduler) Run() {
 			wait := start[i].Sub(now)
 			logging.Debug("Next execution of %s scheduled for %s, waiting %s", job.Name, start[i].String(), wait.String())
 			<- time.After(wait)
+
+			atomic.AddInt64(&startedTickers, 1)
 
 			ticker := time.NewTicker(job.Schedule.Interval)
 			tickers <- ticker
@@ -95,7 +100,7 @@ func (s *Scheduler) Run() {
 		logging.Notice("Aborting")
 
 		logging.Debug("Stopping tickers...")
-		for i := 0; i < count; i ++ {
+		for i := atomic.LoadInt64(&startedTickers); i > 0; i -- {
 			(<- tickers).Stop()
 		}
 
