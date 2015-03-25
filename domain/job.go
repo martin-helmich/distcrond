@@ -19,6 +19,7 @@ type JobJson struct {
 	Schedule ScheduleJson `json:"schedule"`
 	ShellCommand string `json:"shell_command"`
 	Command []string `json:"command"`
+	Environment map[string]string `json:"environment"`
 }
 
 type Job struct {
@@ -30,6 +31,7 @@ type Job struct {
 	Schedule Schedule
 	Command Command
 	LastExecution time.Time
+	Environment map[string]string
 
 	// Auxiliary properties
 	Logger *logging.Logger
@@ -79,6 +81,7 @@ func NewJobFromJson(name string, json JobJson) (Job, error) {
 		Policy: policy,
 		Schedule: schedule,
 		Command: command,
+		Environment: json.Environment,
 		Logger: logger,
 	}, nil
 }

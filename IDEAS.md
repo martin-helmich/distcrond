@@ -1,4 +1,4 @@
-- Specify environment variables for job
+- ~~Specify environment variables for job~~
 - Automatically add SSH default port
 - ~~Parse SSH private keys only once~~
 - Keep persistent SSH connections between jobs

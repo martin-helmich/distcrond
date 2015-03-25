@@ -6,13 +6,16 @@
             "email_address": "kontakt@martin-helmich.de"
         }
     ],
+    "environment": {
+        "FOO": "bar"
+    },
     "policy": {
         "select": "all",
-        "roles": ["web"]
+        "roles": ["web", "db"]
     },
     "schedule": {
-        "interval": "5m",
+        "interval": "10s",
         "reference": "03:10"
     },
-    "shell_command": "echo 'Hello'"
+    "shell_command": "echo $FOO"
 }

@@ -3,7 +3,6 @@ package runner
 import (
 	"errors"
 	. "github.com/martin-helmich/distcrond/domain"
-	logging "github.com/op/go-logging"
 	"fmt"
 )
 
@@ -26,6 +25,6 @@ func GetStrategyForNode(node *Node) (ExecutionStrategy, error) {
 
 type NullExecutionStrategy struct {}
 
-func (n *NullExecutionStrategy) ExecuteCommand(_ Command, _ *RunReportItem, _ *logging.Logger) error {
+func (n *NullExecutionStrategy) ExecuteCommand(_ *Job, _ *RunReportItem) error {
 	return nil
 }

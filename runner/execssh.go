@@ -4,7 +4,6 @@ import (
 	"golang.org/x/crypto/ssh"
 	"io/ioutil"
 	. "github.com/martin-helmich/distcrond/domain"
-	logging "github.com/op/go-logging"
 	"bytes"
 	"errors"
 	"fmt"
@@ -40,23 +39,12 @@ func NewSshExecutionStrategy (node *Node) (*SshExecutionStrategy, error) {
 	return strat, nil
 }
 
-func (s *SshExecutionStrategy) ExecuteCommand(command Command, report *RunReportItem, logger *logging.Logger) error {
-	var output bytes.Buffer
+func (s *SshExecutionStrategy) quote(c string) string {
+	return "'" + strings.Replace(c, "'", "\\'", -1) + "'"
+}
 
-	//	keyString, keyErr := ioutil.ReadFile(s.node.ConnectionOptions.SshKeyFile)
-	//	if keyErr != nil {
-	//		return errors.New(fmt.Sprintf("Could not read private key file %s: %s", s.node.ConnectionOptions.SshKeyFile, keyErr))
-	//	}
-	//
-	//	privateKey, keyParseError := ssh.ParsePrivateKey(keyString)
-	//	if keyParseError != nil {
-	//		return errors.New(fmt.Sprintf("Could not parse private key file %s: %s", s.node.ConnectionOptions.SshKeyFile, keyParseError))
-	//	}
-	//
-	//	config := ssh.ClientConfig{
-	//		User: s.node.ConnectionOptions.SshUser,
-	//		Auth: []ssh.AuthMethod{ssh.PublicKeys(privateKey)},
-	//	}
+func (s *SshExecutionStrategy) ExecuteCommand(job *Job, report *RunReportItem) error {
+	var output bytes.Buffer
 
 	client, clientErr := ssh.Dial("tcp", s.node.ConnectionOptions.SshHost, &s.clientConfig)
 	if clientErr != nil {
@@ -72,15 +60,28 @@ func (s *SshExecutionStrategy) ExecuteCommand(command Command, report *RunReport
 
 	session.Stdout = &output
 
-	originalArgs := command.Command()
+	originalArgs := job.Command.Command()
 	quotedArgs := make([]string, len(originalArgs))
 	for i, c := range originalArgs {
-		quotedArgs[i] = "'" + strings.Replace(c, "'", "\\'", -1) + "'"
+		quotedArgs[i] = s.quote(c)
 	}
 
-	logger.Debug("Executing %s on remote machine\n", quotedArgs)
+	job.Logger.Debug("Executing %s on remote machine", quotedArgs)
 
-	runErr := session.Run(strings.Join(quotedArgs, " "))
+	cmdStrings := make([]string, 0, len(job.Environment) + 1)
+	for key, value := range job.Environment {
+		if err := session.Setenv(key, value); err != nil {
+			job.Logger.Warning("Could not remotely set environment variable %s to %s. Check your 'AcceptEnv' server setting.", key, value)
+			cmdStrings = append(cmdStrings, "export " + key + "=" + s.quote(value))
+		}
+	}
+
+	cmdStrings = append(cmdStrings, strings.Join(quotedArgs, " "))
+	cmd := strings.Join(cmdStrings, " ; ")
+
+	job.Logger.Debug("Actually running \"%s\"", cmd)
+
+	runErr := session.Run(strings.Join(cmdStrings, " ; "))
 
 	report.Output = output.String()
 

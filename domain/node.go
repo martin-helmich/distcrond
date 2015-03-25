@@ -3,7 +3,6 @@ package domain
 import (
 	"errors"
 	"fmt"
-	logging "github.com/op/go-logging"
 	"sync"
 )
 
@@ -57,7 +56,7 @@ func (o ConnectionOptions) IsValid(forType ConnectionType) error {
 }
 
 type ExecutionStrategy interface {
-	ExecuteCommand(command Command, report *RunReportItem, logger *logging.Logger) error
+	ExecuteCommand(job *Job, report *RunReportItem) error
 }
 
 type NodeJson struct {
