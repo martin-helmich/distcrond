@@ -28,7 +28,6 @@ func (s *LocalExecutionStrategy) ExecuteCommand(command domain.Command, report *
 	err := cmd.Run()
 
 	report.Output = output.String()
-	report.Node = s.node
 
 	if err == nil {
 		report.Success = true

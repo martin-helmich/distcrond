@@ -83,7 +83,6 @@ func (s *SshExecutionStrategy) ExecuteCommand(command Command, report *RunReport
 	runErr := session.Run(strings.Join(quotedArgs, " "))
 
 	report.Output = output.String()
-	report.Node = s.node
 
 	if runErr == nil {
 		report.Success = true

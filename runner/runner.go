@@ -40,14 +40,18 @@ func (r *JobRunner) Run(job *domain.Job) error {
 		go func(node *domain.Node, reportItem *domain.RunReportItem) {
 			logger.Debug("Executing on node %s\n", node.Name)
 
+			reportItem.Node = node
 			reportItem.Time.Start = time.Now()
 			atomic.AddInt32(&node.RunningJobs, 1)
 //			node.RunningJobs ++
 
 			strat := node.ExecutionStrategy
 
-			if err := strat.ExecuteCommand(job.Command, reportItem, job.Logger); err != nil {
+			if err := strat.ExecuteCommand(job, reportItem); err != nil {
 				logger.Error("%s", err)
+
+				reportItem.Success = false
+				reportItem.Output = err.Error()
 			}
 
 //			node.RunningJobs --
