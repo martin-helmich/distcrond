@@ -17,10 +17,10 @@ Motivation
 
 I was looking for a service that can schedule and execute periodic jobs over an entire cluster of hosts, especially ones
 that should be run on *any* host, but not on *every* host. While its easy to distribute crontabs with configuration
-management utilities like [http://saltstack.com/](Salt) (that's awesome, too), software that
+management utilities like [Salt](http://saltstack.com) (that's awesome, too), software that
 can schedule and load-balance the execution of these "run-anywhere-but-not-everywhere" jobs is surprisingly rare.
 
-This is basically a subset of what [https://github.com/mesos/chronos](Chronos) is doing, which is built on Apache Mesos
+This is basically a subset of what [Chronos](https://github.com/mesos/chronos) is doing, which is built on Apache Mesos
 and appears to be a very well engineered piece of software. However, it was way too complex and
 enterprisey for my requirements (plus, I have a slight aversion to anything Java-related).
 
@@ -51,13 +51,17 @@ Installation
 
 No binary package (yet).
 
-1. To install *distcrond*, first [https://golang.org/doc/install](install Go).
+1. To install *distcrond*, first [install Go](https://golang.org/doc/install).
+
 2. Then, switch to your `$GOPATH` and run:
 
-    go install github.com/martin-helmich/distcrond
+    ```
+    > go install github.com/martin-helmich/distcrond
+    ```
 
 3. Go should build the `distcrond` binary for you.
-4. Done (sorry, I know you'd hoped for downloading, `./configure`-ing and `make`-ing, all kinds of
+
+4. Done (sorry, I know you'd hoped for downloading, `./configure`-ing and `make`-ing all kinds of
    dependency libraries).
 
 Usage
@@ -79,7 +83,7 @@ You can change this behaviour using appropriate command-line options:
 
 Please note that there is *no way* to start *distcrond* as an actual daemon. This is a different concern that should
 not be handled by the service itself. Use a decent init system like systemd for that. If you dont't have systemd, use
-[http://supervisord.org/](Supervisor).
+[Supervisor](http://supervisord.org).
 
 ### Defining nodes
 
@@ -88,6 +92,7 @@ Nodes are defined as JSON files (one per node) in your node configuration direct
 Example for remote SSH nodes:
 
 ```json
+# file: node_remote.json
 {
     "roles": ["role1", "role2"],
     "connection_type": "ssh",
@@ -102,6 +107,7 @@ Example for remote SSH nodes:
 Example for local node:
 
 ```json
+# file: node_local.json
 {
     "roles": ["role1", "role2"],
     "connection_type": "local"
@@ -113,6 +119,7 @@ Example for local node:
 Jobs are also defined as JSON files (one per job) in your job configuration directory (usually, `/etc/distcrond/jobs.d`):
 
 ```json
+# file: job1.json
 {
     "description": "Do something!",
     "owners": [
