@@ -3,7 +3,6 @@ package server
 import (
 	"net/http"
 	"github.com/julienschmidt/httprouter"
-//	"encoding/json"
 	"fmt"
 	"encoding/json"
 )
