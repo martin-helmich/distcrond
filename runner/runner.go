@@ -1,84 +1,40 @@
 package runner
 
 import (
-	"github.com/martin-helmich/distcrond/container"
 	"github.com/martin-helmich/distcrond/domain"
+	"github.com/martin-helmich/distcrond/container"
 	"github.com/martin-helmich/distcrond/storage"
-	"errors"
-	"fmt"
-	"time"
-	"sync/atomic"
 )
 
-type JobRunner struct {
+type JobRunner interface {
+	Run(job *domain.Job) error
+}
+
+type GenericJobRunner struct {
 	nodes *container.NodeContainer
 	storage storage.StorageBackend
 }
 
-func NewJobRunner(nodes *container.NodeContainer, storage storage.StorageBackend) *JobRunner {
-	return &JobRunner{nodes, storage}
+type DispatchingRunner struct {
+	allRunner JobRunner
+	anyRunner JobRunner
 }
 
-func (r *JobRunner) Run(job *domain.Job) error {
-	logger := job.Logger
-	nodes  := r.nodes.NodesForJob(job)
-
-	if len(nodes) == 0 {
-		return errors.New(fmt.Sprintf("No nodes available for job %s", job.Name))
+func NewDispatchingRunner(nodes *container.NodeContainer, storage storage.StorageBackend) *DispatchingRunner {
+	return &DispatchingRunner{
+		allRunner: NewAllJobRunner(nodes, storage),
+		anyRunner: NewAnyJobRunner(nodes, storage),
 	}
+}
 
-	done := make(chan bool, len(nodes))
-	logger.Debug("Executing on %d nodes", len(nodes))
+func (d *DispatchingRunner) Run(job *domain.Job) error {
+	switch job.Policy.Hosts {
+	case domain.POLICY_ALL:
+		return d.allRunner.Run(job)
 
-	job.Lock.Lock()
-	defer job.Lock.Unlock()
-
-	report := domain.RunReport{}
-	report.Initialize(job, len(nodes))
-
-	for i, node := range nodes {
-		go func(node *domain.Node, reportItem *domain.RunReportItem) {
-			logger.Debug("Executing on node %s\n", node.Name)
-
-			reportItem.Node = node
-			reportItem.Time.Start = time.Now()
-			atomic.AddInt32(&node.RunningJobs, 1)
-//			node.RunningJobs ++
-
-			strat := node.ExecutionStrategy
-
-			if err := strat.ExecuteCommand(job, reportItem); err != nil {
-				logger.Error("%s", err)
-
-				reportItem.Success = false
-				reportItem.Output = err.Error()
-			}
-
-//			node.RunningJobs --
-			atomic.AddInt32(&node.RunningJobs, -1)
-			reportItem.Time.Stop = time.Now()
-
-			logger.Debug("Done on %s\n", node.Name)
-			logger.Info("Report: %s\n", reportItem.Summary())
-
-			done <- true
-		}(node, &report.Items[i])
+	case domain.POLICY_ANY:
+		return d.anyRunner.Run(job)
 	}
-
-	for i := 0; i < len(nodes); i ++ {
-		<- done
-	}
-
-	report.Finalize()
-	job.LastExecution = time.Now()
-
-	go func() {
-		if err := r.storage.SaveReport(&report); err != nil {
-			logger.Error("%s", err)
-		}
-	}()
-
-	logger.Info("%s: Done on all nodes", job.Name)
 
 	return nil
 }

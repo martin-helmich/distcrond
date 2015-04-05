@@ -2,12 +2,12 @@ package container
 
 import (
 	"errors"
-	"github.com/martin-helmich/distcrond/domain"
 	"fmt"
+	"github.com/martin-helmich/distcrond/domain"
 )
 
 type JobContainer struct {
-	jobs []domain.Job
+	jobs       []domain.Job
 	jobsByName map[string]*domain.Job
 }
 
@@ -20,7 +20,7 @@ func NewJobContainer(initialCapacity int) *JobContainer {
 
 func (c *JobContainer) AddJob(job domain.Job) {
 	c.jobs = append(c.jobs, job)
-	c.jobsByName[job.Name] = &c.jobs[len(c.jobs) - 1]
+	c.jobsByName[job.Name] = &c.jobs[len(c.jobs)-1]
 }
 
 func (c *JobContainer) Count() int {

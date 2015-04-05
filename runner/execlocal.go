@@ -10,6 +10,10 @@ type LocalExecutionStrategy struct {
 	node *domain.Node
 }
 
+func (s *LocalExecutionStrategy) HealthCheck() error {
+	return nil
+}
+
 func (s *LocalExecutionStrategy) ExecuteCommand(job *domain.Job, report *domain.RunReportItem) error {
 	var output bytes.Buffer
 	var cmd *exec.Cmd

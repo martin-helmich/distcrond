@@ -1,0 +1,9 @@
+{
+    "roles": ["db"],
+    "connection_type": "ssh",
+    "connection_options": {
+        "ssh_user": "mhelmich",
+        "ssh_host": "192.168.2.123:22",
+        "ssh_private_key_file": "/home/mhelmich/.ssh/id_rsa"
+    }
+}

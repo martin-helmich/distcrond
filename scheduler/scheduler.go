@@ -12,13 +12,13 @@ import (
 type Scheduler struct {
 	jobContainer *container.JobContainer
 	nodeContainer *container.NodeContainer
-	runner *runner.JobRunner
+	runner runner.JobRunner
 	abort chan bool
 
 	Done chan bool
 }
 
-func NewScheduler(jobs *container.JobContainer, nodes *container.NodeContainer, runner *runner.JobRunner) *Scheduler {
+func NewScheduler(jobs *container.JobContainer, nodes *container.NodeContainer, runner runner.JobRunner) *Scheduler {
 	return &Scheduler {
 		jobs,
 		nodes,

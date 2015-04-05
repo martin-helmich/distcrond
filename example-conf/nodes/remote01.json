@@ -1,5 +1,4 @@
 {
-    "name": "db0001",
     "roles": ["db"],
     "connection_type": "ssh",
     "connection_options": {

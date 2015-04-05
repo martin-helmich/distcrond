@@ -5,6 +5,7 @@ import (
 	"os"
 	"errors"
 	"fmt"
+	"time"
 )
 
 const (
@@ -19,6 +20,7 @@ type RuntimeConfig struct {
 	nodesDirectory string
 	allowNoOwner bool
 	storageBackend string
+	healthCheckInterval time.Duration
 
 	// Elasticsearch storage backend
 	esHost string
@@ -76,11 +78,19 @@ func (c *RuntimeConfig) MemProfilingTarget() string {
 	return c.memprofile
 }
 
-func (c *RuntimeConfig) PopulateFromFlags() {
+func (c *RuntimeConfig) HealthCheckInterval() time.Duration {
+	return c.healthCheckInterval
+}
+
+func (c *RuntimeConfig) PopulateFromFlags() error {
+	var healthCheckInterval string
+	var err error
+
 	flag.StringVar(&c.jobsDirectory, "jobsDirectory", "/etc/distcron/jobs.d", "Directory from which to load job definitions")
 	flag.StringVar(&c.nodesDirectory, "nodesDirectory", "/etc/distcron/nodes.d", "Directory from which to load node definitions")
 	flag.BoolVar(&c.allowNoOwner, "allowNoOwner", false, "Set to allow jobs to have no owners")
 	flag.StringVar(&c.storageBackend, "storage", STORAGE_ELASTICSEARCH, "Which storage backend to use ('es' or 'plain')")
+	flag.StringVar(&healthCheckInterval, "healthCheckInterval", "10s", "Interval in which to check node health")
 
 	flag.StringVar(&c.esHost, "esHost", "localhost", "Elasticsearch host")
 	flag.IntVar(&c.esPort, "esPort", 9200, "Elasticsearch port")
@@ -91,6 +101,12 @@ func (c *RuntimeConfig) PopulateFromFlags() {
 	flag.StringVar(&c.memprofile, "memprofile", "", "Write Memory profile to file")
 
 	flag.Parse()
+
+	if c.healthCheckInterval, err = time.ParseDuration(healthCheckInterval); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c *RuntimeConfig) IsValid() error {

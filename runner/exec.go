@@ -6,6 +6,20 @@ import (
 	"fmt"
 )
 
+type NodeDownError struct {
+	realError error
+	reason string
+	node *Node
+}
+
+func NewNodeDownError(node *Node, reason string, real error) NodeDownError {
+	return NodeDownError{realError: real, reason: reason, node: node}
+}
+
+func (e NodeDownError) Error() string {
+	return fmt.Sprintf("Node %s is down: %s (%s)", e.node.Name, e.reason, e.realError)
+}
+
 func GetStrategyForNode(node *Node) (ExecutionStrategy, error) {
 	switch {
 	case node.ConnectionType == CONN_LOCAL:
@@ -24,6 +38,10 @@ func GetStrategyForNode(node *Node) (ExecutionStrategy, error) {
 }
 
 type NullExecutionStrategy struct {}
+
+func (n *NullExecutionStrategy) HealthCheck() error {
+	return nil
+}
 
 func (n *NullExecutionStrategy) ExecuteCommand(_ *Job, _ *RunReportItem) error {
 	return nil

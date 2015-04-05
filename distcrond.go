@@ -12,6 +12,7 @@ import (
 	"github.com/martin-helmich/distcrond/storage"
 	"github.com/martin-helmich/distcrond/server"
 	"runtime/pprof"
+	"fmt"
 )
 
 var runtimeConfig *RuntimeConfig
@@ -22,7 +23,10 @@ type JobContainer struct {
 
 func main() {
 	runtimeConfig = new(RuntimeConfig)
-	runtimeConfig.PopulateFromFlags()
+	if err := runtimeConfig.PopulateFromFlags(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
 	logging.Setup()
 	log := logging.Logger
@@ -88,7 +92,7 @@ func main() {
 
 	defer storageBackend.Disconnect()
 
-	jobRunner := runner.NewJobRunner(nodeContainer, storageBackend)
+	jobRunner := runner.NewDispatchingRunner(nodeContainer, storageBackend)
 	jobScheduler := scheduler.NewScheduler(jobContainer, nodeContainer, jobRunner)
 	go jobScheduler.Run()
 
@@ -99,7 +103,7 @@ func main() {
 	signal.Notify(c, os.Interrupt)
 
 	go func() {
-		<- c
+		<-c
 		log.Notice("Received SIGINT")
 		jobScheduler.Abort()
 	}()

@@ -1,5 +1,4 @@
 {
-    "name": "local",
     "roles": ["web"],
     "connection_type": "local"
 }

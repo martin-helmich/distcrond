@@ -43,17 +43,33 @@ func (s *SshExecutionStrategy) quote(c string) string {
 	return "'" + strings.Replace(c, "'", "\\'", -1) + "'"
 }
 
+func (s *SshExecutionStrategy) HealthCheck() error {
+	client, clientErr := ssh.Dial("tcp", s.node.ConnectionOptions.SshHost, &s.clientConfig)
+	if clientErr != nil {
+		return NewNodeDownError(s.node, "Could not open TCP connection", clientErr)
+	}
+
+	session, sesErr := client.NewSession()
+	if sesErr != nil {
+		return NewNodeDownError(s.node, "Could not start SSH session", sesErr)
+	}
+
+	defer session.Close()
+
+	return nil
+}
+
 func (s *SshExecutionStrategy) ExecuteCommand(job *Job, report *RunReportItem) error {
 	var output bytes.Buffer
 
 	client, clientErr := ssh.Dial("tcp", s.node.ConnectionOptions.SshHost, &s.clientConfig)
 	if clientErr != nil {
-		return errors.New(fmt.Sprintf("Could not open connection to %s: %s", s.node.Name, clientErr))
+		return NewNodeDownError(s.node, "Could not open TCP connection", clientErr)
 	}
 
 	session, sesErr := client.NewSession()
 	if sesErr != nil {
-		return errors.New(fmt.Sprintf("Could not open SSH session on %s: %s", s.node.Name, sesErr))
+		return NewNodeDownError(s.node, "Could not start SSH session", sesErr)
 	}
 
 	defer session.Close()

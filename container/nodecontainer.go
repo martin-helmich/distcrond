@@ -2,14 +2,14 @@ package container
 
 import (
 	"errors"
-	"math/rand"
+	"fmt"
 	"github.com/martin-helmich/distcrond/domain"
 	"github.com/martin-helmich/distcrond/logging"
-	"fmt"
+	"math/rand"
 )
 
 type NodeContainer struct {
-	nodes []domain.Node
+	nodes       []domain.Node
 	nodesByName map[string]*domain.Node
 	nodesByRole map[string][]*domain.Node
 }
@@ -50,25 +50,49 @@ func (c *NodeContainer) NodeByName(name string) (*domain.Node, error) {
 	}
 }
 
+func (c *NodeContainer) NodeCandidatesForJob(job *domain.Job) []*domain.Node {
+	nodes := c.potentialNodesForJob(job, true)
+
+	// Fisher-Yates shuffle
+	for i, _ := range nodes {
+		j := rand.Intn(i + 1)
+		nodes[i], nodes[j] = nodes[j], nodes[i]
+	}
+
+	return nodes
+}
+
 func (c *NodeContainer) NodesForJob(job *domain.Job) []*domain.Node {
-	potentialNodes := c.potentialNodesForJob(job)
+	switch job.Policy.Hosts {
+	case domain.POLICY_ALL:
+		return c.potentialNodesForJob(job, false)
 
-	logging.Debug("Found %d potential nodes for job %s: %s", len(potentialNodes), job.Name, potentialNodes)
+	case domain.POLICY_ANY:
+		potentialNodes := c.potentialNodesForJob(job, true)
+		logging.Debug("Found %d potential nodes for job %s: %s", len(potentialNodes), job.Name, potentialNodes)
 
-	if job.Policy.Hosts == domain.POLICY_ALL {
-		return potentialNodes
-	} else {
 		idx := rand.Int() % len(potentialNodes)
-		return potentialNodes[idx:idx+1]
+		return potentialNodes[idx : idx+1]
+
+	default:
+		logging.Error("Invalid job policy: %s", job.Policy.Hosts)
+		return make([]*domain.Node, 0)
 	}
 }
 
-func (c *NodeContainer) potentialNodesForJob(job *domain.Job) []*domain.Node {
-	nodes := make([]*domain.Node, 0, len(c.nodes))
+func (c *NodeContainer) potentialNodesForJob(job *domain.Job, onlyHealthyNodes bool) []*domain.Node {
+	var filter func(*domain.Node) bool = func(_ *domain.Node) bool { return true }
+	var nodes []*domain.Node = make([]*domain.Node, 0, len(c.nodes))
+
+	if onlyHealthyNodes {
+		filter = func(node *domain.Node) bool {
+			return node.Status == domain.STATUS_UP
+		}
+	}
 
 	if len(job.Policy.HostList) > 0 {
 		for _, name := range job.Policy.HostList {
-			if node, ok := c.nodesByName[name]; ok {
+			if node, ok := c.nodesByName[name]; ok && filter(node) {
 				nodes = append(nodes, node)
 			}
 		}
@@ -77,7 +101,7 @@ func (c *NodeContainer) potentialNodesForJob(job *domain.Job) []*domain.Node {
 		for _, role := range job.Policy.Roles {
 			if hostsWithRole, ok := c.nodesByRole[role]; ok {
 				for _, node := range hostsWithRole {
-					if _, known := knownHosts[node.Name]; known == false {
+					if _, known := knownHosts[node.Name]; known == false && filter(node) {
 						nodes = append(nodes, node)
 						knownHosts[node.Name] = true
 					}

@@ -10,11 +10,11 @@
         "FOO": "bar"
     },
     "policy": {
-        "select": "all",
+        "select": "any",
         "roles": ["web", "db"]
     },
     "schedule": {
-        "interval": "10s",
+        "interval": "30s",
         "reference": "03:10"
     },
     "shell_command": "echo $FOO"

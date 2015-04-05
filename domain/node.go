@@ -56,6 +56,7 @@ func (o ConnectionOptions) IsValid(forType ConnectionType) error {
 }
 
 type ExecutionStrategy interface {
+	HealthCheck() error
 	ExecuteCommand(job *Job, report *RunReportItem) error
 }
 
