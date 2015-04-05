@@ -12,8 +12,8 @@ import (
 
 type AllJobRunner GenericJobRunner
 
-func NewAllJobRunner(nodes *container.NodeContainer, storage storage.StorageBackend) JobRunner {
-	return &AllJobRunner{nodes, storage}
+func NewAllJobRunner(nodes *container.NodeContainer, storage storage.StorageBackend, health HealthChecker) JobRunner {
+	return &AllJobRunner{nodes: nodes, storage: storage, healthChecker: health}
 }
 
 func (r *AllJobRunner) Run(job *domain.Job) error {
@@ -43,6 +43,18 @@ func (r *AllJobRunner) Run(job *domain.Job) error {
 
 			strat := node.ExecutionStrategy
 			if err := strat.ExecuteCommand(job, reportItem); err != nil {
+				switch err.(type) {
+				case NodeDownError:
+					func() {
+						node.Lock.Lock();
+						defer node.Lock.Unlock()
+
+						logger.Warning("Node %s is down.", node.Name)
+						node.Status = domain.STATUS_DOWN
+					}()
+					r.healthChecker.ScheduleHealthCheck(node)
+				}
+
 				logger.Error("%s", err)
 				reportItem.Success = false
 				reportItem.Output = err.Error()

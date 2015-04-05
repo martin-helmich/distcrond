@@ -14,7 +14,7 @@
         "roles": ["web", "db"]
     },
     "schedule": {
-        "interval": "30s",
+        "interval": "10s",
         "reference": "03:10"
     },
     "shell_command": "echo $FOO"

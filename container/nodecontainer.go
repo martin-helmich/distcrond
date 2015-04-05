@@ -80,6 +80,24 @@ func (c *NodeContainer) NodesForJob(job *domain.Job) []*domain.Node {
 	}
 }
 
+func (c *NodeContainer) NodesWithStatus(status domain.NodeStatus) []*domain.Node {
+	return c.NodesByFilter(func(n *domain.Node) bool {
+		return n.Status == status
+	})
+}
+
+func (c *NodeContainer) NodesByFilter(filter (func(*domain.Node) bool)) []*domain.Node {
+	var nodes []*domain.Node = make([]*domain.Node, 0, len(c.nodes))
+
+	for _, node := range c.nodes {
+		if filter(&node) {
+			nodes = append(nodes, &node)
+		}
+	}
+
+	return nodes
+}
+
 func (c *NodeContainer) potentialNodesForJob(job *domain.Job, onlyHealthyNodes bool) []*domain.Node {
 	var filter func(*domain.Node) bool = func(_ *domain.Node) bool { return true }
 	var nodes []*domain.Node = make([]*domain.Node, 0, len(c.nodes))

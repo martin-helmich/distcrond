@@ -12,7 +12,8 @@ type JobRunner interface {
 
 type GenericJobRunner struct {
 	nodes *container.NodeContainer
-	storage storage.StorageBackend
+	storage       storage.StorageBackend
+	healthChecker HealthChecker
 }
 
 type DispatchingRunner struct {
@@ -20,10 +21,10 @@ type DispatchingRunner struct {
 	anyRunner JobRunner
 }
 
-func NewDispatchingRunner(nodes *container.NodeContainer, storage storage.StorageBackend) *DispatchingRunner {
+func NewDispatchingRunner(nodes *container.NodeContainer, storage storage.StorageBackend, health HealthChecker) *DispatchingRunner {
 	return &DispatchingRunner{
-		allRunner: NewAllJobRunner(nodes, storage),
-		anyRunner: NewAnyJobRunner(nodes, storage),
+		allRunner: NewAllJobRunner(nodes, storage, health),
+		anyRunner: NewAnyJobRunner(nodes, storage, health),
 	}
 }
 

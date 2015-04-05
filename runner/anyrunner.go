@@ -12,8 +12,8 @@ import (
 
 type AnyJobRunner GenericJobRunner
 
-func NewAnyJobRunner(nodes *container.NodeContainer, storage storage.StorageBackend) JobRunner {
-	return &AnyJobRunner{nodes, storage}
+func NewAnyJobRunner(nodes *container.NodeContainer, storage storage.StorageBackend, health HealthChecker) JobRunner {
+	return &AnyJobRunner{nodes: nodes, storage: storage, healthChecker: health}
 }
 
 func (r *AnyJobRunner) Run(job *domain.Job) error {
@@ -59,6 +59,7 @@ func (r *AnyJobRunner) Run(job *domain.Job) error {
 						logger.Warning("Node %s is down.", node.Name)
 						node.Status = domain.STATUS_DOWN
 					}()
+					r.healthChecker.ScheduleHealthCheck(node)
 					return false
 
 				default:

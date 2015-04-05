@@ -92,7 +92,8 @@ func main() {
 
 	defer storageBackend.Disconnect()
 
-	jobRunner := runner.NewDispatchingRunner(nodeContainer, storageBackend)
+	healthChecker := runner.NewHealthChecker(runtimeConfig)
+	jobRunner := runner.NewDispatchingRunner(nodeContainer, storageBackend, healthChecker)
 	jobScheduler := scheduler.NewScheduler(jobContainer, nodeContainer, jobRunner)
 	go jobScheduler.Run()
 
