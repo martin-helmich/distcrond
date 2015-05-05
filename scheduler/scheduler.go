@@ -53,9 +53,9 @@ func (s *Scheduler) nextRunDate(job *Job, now time.Time) time.Time {
 func (s *Scheduler) Run() {
 	logging.Info("Starting scheduler")
 
-	var count      int               = s.jobContainer.Count()
-	var semaphores []chan bool       = make([]chan bool, count)
-	var tickers    chan *time.Ticker = make(chan *time.Ticker, count)
+	var jobCount   int               = s.jobContainer.Count()
+	var semaphores []chan bool       = make([]chan bool, jobCount)
+	var tickers    chan *time.Ticker = make(chan *time.Ticker, jobCount)
 	var now        time.Time         = time.Now()
 
 	var startedTickers int64 = 0
@@ -66,12 +66,12 @@ func (s *Scheduler) Run() {
 		<-semaphores[i]
 	}
 
-	var start []time.Time = make([]time.Time, count)
-	for i := 0; i < count; i ++ {
+	var start []time.Time = make([]time.Time, jobCount)
+	for i := 0; i < jobCount; i ++ {
 		start[i] = s.nextRunDate(s.jobContainer.Get(i), now)
 	}
 
-	for i := 0; i < count; i ++ {
+	for i := 0; i < jobCount; i ++ {
 		job := s.jobContainer.Get(i)
 		semaphores[i] = make(chan bool, 1)
 		go func(job *Job, i int) {
@@ -86,11 +86,17 @@ func (s *Scheduler) Run() {
 
 			logging.Debug("Started timer for %s", job.Name)
 
-			for t := range ticker.C {
+			runJob := func(t time.Time) {
 				withLock(func() {
 					logging.Notice("Executing job %s at %s", job.Name, t)
 					s.runner.Run(job)
 				}, i)
+			}
+
+			runJob(time.Now())
+
+			for t := range ticker.C {
+				runJob(t)
 			}
 		}(job, i)
 	}
@@ -105,7 +111,7 @@ func (s *Scheduler) Run() {
 		}
 
 		logging.Notice("Waiting for running jobs...")
-		for i := 0; i < count; i ++ {
+		for i := 0; i < jobCount; i ++ {
 			semaphores[i] <- true
 		}
 
