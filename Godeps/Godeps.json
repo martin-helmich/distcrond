@@ -14,6 +14,11 @@
 			"Rev": "e5fb9bb8a3a168cc269b38f092b65d2e18cebb9a"
 		},
 		{
+			"ImportPath": "github.com/robfig/cron",
+			"Comment": "v1-7-g32d9c27",
+			"Rev": "32d9c273155a0506d27cf73dd1246e86a470997e"
+		},
+		{
 			"ImportPath": "github.com/twinj/uuid",
 			"Rev": "4d772442af203e27723acc7d1eea6c93cd319c57"
 		},
