@@ -41,7 +41,6 @@ Features
 ### Planned
 
 - Notification options (ever had a cronjob that had been failing for months and you didn't notice it?)
-- Better definition of schedules
 - Fuzzyfication of schedules ("run once a day, but I don't care when!") with assurance of uniform distribution.
 - Alternate remote execution engines that do not require SSH access (maybe using a *Salt* runner or a custom agent)
 - More storage backends for job execution reports (like for example MongoDB)
@@ -132,10 +131,16 @@ Jobs are also defined as JSON files (one per job) in your job configuration dire
         "hosts": "any",
         "roles": ["web", "db"]
     },
-    "schedule": {
-        "interval": "10m",
-        "reference": "03:10"
-    },
+    "schedule": "@every 10m",
     "command": ["/usr/bin/rm", "-r", "-f", "/"]
 }
 ```
+
+The `schedule` parameter is usually a regular cron expression with the **exception that it contains six (not five) components**. In contrast to UNIX cron expressions, distcrond interprets cron expressions with second precision, not minutes. Some examples for cron expressions include:
+
+- `* * * * * *`: Every second
+- `0 * * * * *`: Every minute
+- `0 34 12 * 4-9 0,6`: 12:34 at every sunday and saturday from april to september
+- `@hourly`: Every hour at 0 minutes
+- `@every 1h`: Every hour
+- `@every 10s`: Every ten seconds
