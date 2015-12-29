@@ -1,0 +1,25 @@
+{
+	"ImportPath": "github.com/martin-helmich/distcrond",
+	"GoVersion": "go1.5",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/julienschmidt/httprouter",
+			"Rev": "999ba04938b528fb4fb859231ee929958b8db4a6"
+		},
+		{
+			"ImportPath": "github.com/op/go-logging",
+			"Rev": "e5fb9bb8a3a168cc269b38f092b65d2e18cebb9a"
+		},
+		{
+			"ImportPath": "github.com/twinj/uuid",
+			"Rev": "4d772442af203e27723acc7d1eea6c93cd319c57"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/ssh",
+			"Rev": "b7d6bf2c61544745a02f83dec90393985fc3a065"
+		}
+	]
+}
