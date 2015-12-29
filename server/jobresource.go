@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"github.com/martin-helmich/distcrond/container"
 	"fmt"
+	"time"
 )
 
 type JobHandler SubHandler
@@ -41,6 +42,7 @@ type JobResource struct {
 	Schedule string `json:"execution_schedule"`
 	Command []string `json:"command"`
 	LastExecution interface{} `json:"last_execution"`
+	NextExecution string `json:"next_execution"`
 }
 
 func (h *JobHandler) resourceFromJob(job *domain.Job, res *JobResource, host string) {
@@ -69,6 +71,8 @@ func (h *JobHandler) resourceFromJob(job *domain.Job, res *JobResource, host str
 	} else {
 		res.LastExecution = nil
 	}
+
+	res.NextExecution = job.Schedule.Next(time.Now()).String()
 
 	if len(job.Policy.Roles) > 0 {
 		res.Policy = RoleExecutionPolicyResource{job.Policy.Hosts, job.Policy.Roles}
