@@ -8,11 +8,16 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/martin-helmich/distcrond/storage"
 	"time"
+	"encoding/json"
 )
 
 type LinkResource struct {
 	Href string `json:"href"`
 	Rel string `json:"rel"`
+}
+
+type RootResource struct {
+	Links []LinkResource `json:"links"`
 }
 
 type RestServer struct {
@@ -23,6 +28,8 @@ type RestServer struct {
 	jobs *container.JobContainer
 	store storage.StorageBackend
 	logger *logging.Logger
+
+	root *RootResource
 }
 
 type SubHandler struct {
@@ -39,18 +46,39 @@ func (s *RestServer) decorate(handler httprouter.Handle) httprouter.Handle {
 	}
 }
 
+func (h *RestServer) RootHandler(resp http.ResponseWriter, req *http.Request, param httprouter.Params) {
+	root := h.root
+	root.Links[0].Href = fmt.Sprintf("http://%s/jobs", req.Host)
+	root.Links[1].Href = fmt.Sprintf("http://%s/nodes", req.Host)
+
+	resp.Header().Set("Content-Type", "application/json")
+
+	body, _ := json.Marshal(root)
+	resp.Write(body)
+}
+
+func (h *RestServer) buildRootResource() {
+	h.root = new(RootResource)
+	h.root.Links = []LinkResource {
+		LinkResource{"/jobs", "jobs"},
+		LinkResource{"/nodes", "nodes"},
+	}
+}
+
 func NewRestServer(port int, nodes *container.NodeContainer, jobs *container.JobContainer, store storage.StorageBackend, logger *logging.Logger) *RestServer {
 	server := new(RestServer)
 	server.nodes = nodes
 	server.jobs = jobs
 	server.logger = logger
 	server.store = store
+	server.buildRootResource()
 
 	nodehandler := NodeHandler{server}
 	jobhandler := JobHandler{server}
 	reporthandler := ReportHandler{server}
 
 	router := httprouter.New()
+	router.GET("/", server.decorate(server.RootHandler))
 	router.GET("/nodes", server.decorate(nodehandler.NodeList))
 	router.GET("/nodes/:node", server.decorate(nodehandler.NodeSingle))
 	router.GET("/jobs", server.decorate(jobhandler.JobList))
