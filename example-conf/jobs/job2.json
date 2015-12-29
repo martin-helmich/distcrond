@@ -10,9 +10,6 @@
         "select": "all",
         "roles": ["web", "db"]
     },
-    "schedule": {
-        "interval": "10m",
-        "reference": "03:10"
-    },
+    "schedule": "0 45 20 * * *",
     "command": ["/usr/sbin/ifconfig"]
 }

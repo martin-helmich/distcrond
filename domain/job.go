@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"errors"
 	"time"
-	logging "github.com/op/go-logging"
+	"github.com/op/go-logging"
+	"github.com/robfig/cron"
 	"sync"
 )
 
@@ -16,7 +17,7 @@ type JobJson struct {
 	Description string `json:"description"`
 	Owners []JobOwnerJson `json:"owners"`
 	Policy ExecutionPolicyJson `json:"policy"`
-	Schedule ScheduleJson `json:"schedule"`
+	Schedule string `json:"schedule"`
 	ShellCommand string `json:"shell_command"`
 	Command []string `json:"command"`
 	Environment map[string]string `json:"environment"`
@@ -28,7 +29,8 @@ type Job struct {
 	Description string
 	Owners []JobOwner
 	Policy ExecutionPolicy
-	Schedule Schedule
+	Schedule cron.Schedule
+	ScheduleSpec string
 	Command Command
 	LastExecution time.Time
 	Environment map[string]string
@@ -64,7 +66,7 @@ func NewJobFromJson(name string, json JobJson) (Job, error) {
 		return Job{}, pErr
 	}
 
-	schedule, sErr := NewScheduleFromJson(json.Schedule)
+	schedule, sErr := cron.Parse(json.Schedule)
 	if sErr != nil {
 		return Job{}, sErr
 	}
@@ -80,6 +82,7 @@ func NewJobFromJson(name string, json JobJson) (Job, error) {
 		Owners: owners,
 		Policy: policy,
 		Schedule: schedule,
+		ScheduleSpec: json.Schedule,
 		Command: command,
 		Environment: json.Environment,
 		Logger: logger,
@@ -97,10 +100,6 @@ func (j Job) IsValid(config JobValidationConfig) error {
 
 	if err := j.Policy.IsValid(); err != nil {
 		return errors.New(fmt.Sprintf("Invalid execution policy: %s", err))
-	}
-
-	if err := j.Schedule.IsValid(); err != nil {
-		return errors.New(fmt.Sprintf("Invalid schedule: %s", err))
 	}
 
 	for i, owner := range(j.Owners) {

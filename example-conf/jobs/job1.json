@@ -13,9 +13,6 @@
         "select": "any",
         "roles": ["web", "db"]
     },
-    "schedule": {
-        "interval": "10s",
-        "reference": "03:10"
-    },
+    "schedule": "0 * * * * *",
     "shell_command": "echo $FOO"
 }

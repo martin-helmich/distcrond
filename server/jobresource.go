@@ -38,7 +38,7 @@ type JobResource struct {
 	Description string `json:"description"`
 	Owners []JobOwnerResource `json:"owners"`
 	Policy interface {} `json:"execution_policy"`
-	Schedule ScheduleResource `json:"execution_schedule"`
+	Schedule string `json:"execution_schedule"`
 	Command []string `json:"command"`
 	LastExecution interface{} `json:"last_execution"`
 }
@@ -51,8 +51,7 @@ func (h *JobHandler) resourceFromJob(job *domain.Job, res *JobResource, host str
 	res.Href = fmt.Sprintf("http://%s/jobs/%s", host, job.Name)
 	res.Description = job.Description
 
-	res.Schedule.Interval = job.Schedule.Interval.Nanoseconds()
-	res.Schedule.IntervalString = job.Schedule.Interval.String()
+	res.Schedule = job.ScheduleSpec
 
 	res.Links[0].Href = fmt.Sprintf("http://%s/jobs/%s/reports", host, job.Name)
 	res.Links[0].Rel = "reports"
