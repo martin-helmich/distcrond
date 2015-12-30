@@ -38,6 +38,8 @@ type SubHandler struct {
 
 func (s *RestServer) decorate(handler httprouter.Handle) httprouter.Handle {
 	return func(resp http.ResponseWriter, req *http.Request, par httprouter.Params) {
+		resp.Header().Set("Access-Control-Allow-Origin", "*")
+
 		start := time.Now()
 		handler(resp, req, par)
 		dur := time.Now().Sub(start)

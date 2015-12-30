@@ -27,9 +27,9 @@ type HostsExecutionPolicyResource struct {
 	HostList []string `json:"hosts"`
 }
 
-type ScheduleResource struct {
-	Interval int64 `json:"interval"`
-	IntervalString string `json:"interval_string"`
+type DateResource struct {
+	Timestamp int64 `json:"timestamp"`
+	String string `json:"string"`
 }
 
 type JobResource struct {
@@ -41,8 +41,8 @@ type JobResource struct {
 	Policy interface {} `json:"execution_policy"`
 	Schedule string `json:"execution_schedule"`
 	Command []string `json:"command"`
-	LastExecution interface{} `json:"last_execution"`
-	NextExecution string `json:"next_execution"`
+	LastExecution *DateResource `json:"last_execution"`
+	NextExecution *DateResource `json:"next_execution"`
 }
 
 func (h *JobHandler) resourceFromJob(job *domain.Job, res *JobResource, host string) {
@@ -67,12 +67,19 @@ func (h *JobHandler) resourceFromJob(job *domain.Job, res *JobResource, host str
 	}
 
 	if !job.LastExecution.IsZero() {
-		res.LastExecution = job.LastExecution.String()
+		res.LastExecution = &DateResource{
+			Timestamp: job.LastExecution.UnixNano(),
+			String: job.LastExecution.String(),
+		}
 	} else {
 		res.LastExecution = nil
 	}
 
-	res.NextExecution = job.Schedule.Next(time.Now()).String()
+	next := job.Schedule.Next(time.Now())
+	res.NextExecution = &DateResource{
+		Timestamp: next.UnixNano(),
+		String: next.String(),
+	}
 
 	if len(job.Policy.Roles) > 0 {
 		res.Policy = RoleExecutionPolicyResource{job.Policy.Hosts, job.Policy.Roles}
